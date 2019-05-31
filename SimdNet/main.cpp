@@ -44,6 +44,8 @@
 
 #include <mkl.h>
 
+#include <plf/plf_nanotimer.h>
+
 #include <xsimd/xsimd.hpp>
 
 #include "rng.hpp"
@@ -60,34 +62,61 @@ struct FullyConnectedNeuralNetwork {
     static constexpr int NumInsOuts = NumIns + NumNeurons;
     static constexpr int NumWeights = ( NumNeurons * ( 2 * NumInput + NumBias + NumNeurons ) ) / 2;
 
-    std::array<float, NumInsOuts> m_input_bias_output{};
-    std::array<float, NumWeights> m_weights;
+    using ibo_type = std::array<float, NumInsOuts>;
+    using wgt_type = std::array<float, NumWeights>;
+
+    ibo_type m_input_bias_output;
+    wgt_type m_weights;
 
     FullyConnectedNeuralNetwork ( ) noexcept {
         m_input_bias_output[ NumInput ] = 1.0f;
         std::generate ( std::begin ( m_weights ), std::end ( m_weights ),
                         [] ( ) { return std::uniform_real_distribution<float> ( -1.0f, 1.0f ) ( Rng::gen ( ) ); } );
-        print_ibo ( );
     }
 
     template<typename... Args>
     void input ( Args &&... args_ ) noexcept {
         static_assert ( sizeof...( args_ ) == NumInput, "input has to be equal to NumInput" );
-        int i = 0; // starting index, can be an argument.
+        int i = 0;
         ( ( m_input_bias_output[ i++ ] = args_ ), ... );
-        print_ibo ( );
     }
 
-    void feedForward ( ) noexcept {
+    [[nodiscard]] constexpr std::span<float> output ( ) noexcept {
+        return { m_input_bias_output.data ( ) + NumInsOuts - NumOutput, NumOutput };
+    }
+
+    void feed_forward ( ) noexcept {
+        float * ibo = m_input_bias_output.data ( ), * wgt = m_weights.data ( );
+        for ( int i = NumIns; i < NumInsOuts; wgt += i++ )
+            ibo[ i ] = activation_bipolar ( cblas_sdot ( i, ibo, 1, wgt, 1 ), 1.0f );
+    }
+
+    template<typename... Args>
+    [[nodiscard]] std::span<float> feed_forward ( Args &&... args_ ) noexcept {
+        float * ibo = m_input_bias_output.data ( );
+        ( ( *ibo++ = args_ ), ... );
+        ibo = m_input_bias_output.data ( );
+        float *wgt = m_weights.data ( );
+        for ( int i = NumIns; i < NumInsOuts; wgt += i++ )
+            ibo[ i ] = activation_bipolar ( cblas_sdot ( i, ibo, 1, wgt, 1 ), 1.0f );
+        return { m_input_bias_output.data ( ) + NumInsOuts - NumOutput, NumOutput };
+    }
+
+    [[nodiscard]] std::span<float> feed_forward ( float * ibo_ ) noexcept {
         float * wgt = m_weights.data ( );
-        for ( int col = NumIns; col < NumInsOuts; wgt += col++ ) {
-            m_input_bias_output[ col ] = activation_bipolar ( cblas_sdot ( col, m_input_bias_output.data ( ), 1, wgt, 1 ), 1.0f );
-            print_ibo ( );
-        }
+        for ( int i = NumIns; i < NumInsOuts; wgt += i++ )
+            ibo_[ i ] = activation_bipolar ( cblas_sdot ( i, ibo_, 1, wgt, 1 ), 1.0f );
+        return { ibo_ + NumInsOuts - NumOutput, NumOutput };
     }
 
-    [[nodiscard]] inline float activation_bipolar ( const float net_, const float alpha_ ) noexcept {
-        return 2.0f / ( 1.0f + std::exp ( -2.0f * net_ * alpha_ ) ) - 1.0f;
+    [[nodiscard]] inline float activation_bipolar ( float net_, float alpha_ ) noexcept {
+        net_ *= alpha_;
+        return 2.0f / ( 1.0f + std::exp ( -2.0f * net_ ) ) - 1.0f;
+    }
+
+    [[nodiscard]] inline float activation_elliotsig ( float net_, float alpha_ ) noexcept {
+        net_ *= alpha_;
+        return net_ / ( 1.0f + std::abs ( net_ ) );
     }
 
     void print_ibo ( ) noexcept {
@@ -97,12 +126,32 @@ struct FullyConnectedNeuralNetwork {
     }
 };
 
+
 int main ( ) {
 
-    FullyConnectedNeuralNetwork<4, 5, 3> nn;
+    constexpr int in = 128;
 
-    nn.input ( 0.1f, -0.2f, 0.12f, -0.6f );
-    nn.feedForward ( );
+    FullyConnectedNeuralNetwork<in, 150, 1> nn;
+
+    typename FullyConnectedNeuralNetwork<in, 150, 1>::ibo_type ibo;
+    ibo[ in ] = 1.0f;
+
+    float x = 0.0;
+
+    plf::nanotimer t;
+
+    t.start ( );
+
+    for ( int i = 0; i < 100'000; ++i ) {
+        for ( int j = 0; j < in; ++j )
+            ibo[ j ] = std::uniform_real_distribution<float> ( -0.25f, 0.25f ) ( Rng::gen ( ) );
+        auto out = nn.feed_forward ( ibo.data ( ) );
+        x += out[ 0 ];
+    }
+
+    std::cout << ( std::uint64_t ) t.get_elapsed_ms ( ) << nl;
+
+    std::cout << x << nl;
 
     return EXIT_SUCCESS;
 }
