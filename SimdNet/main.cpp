@@ -102,19 +102,18 @@ struct FullyConnectedNeuralNetwork {
         return { m_input_bias_output.data ( ) + NumInsOuts - NumOutput, NumOutput };
     }
 
-    [[nodiscard]] std::span<float> feed_forward ( float * ibo_ ) noexcept {
+    [[nodiscard]] std::span<float> feed_forward ( float * const ibo_ ) noexcept {
         float * wgt = m_weights.data ( );
         for ( int i = NumIns; i < NumInsOuts; wgt += i++ )
-            ibo_[ i ] = activation_bipolar ( cblas_sdot ( i, ibo_, 1, wgt, 1 ), 1.0f );
+            ibo_[ i ] = activation_elliotsig ( cblas_sdot ( i, ibo_, 1, wgt, 1 ), 1.0f );
         return { ibo_ + NumInsOuts - NumOutput, NumOutput };
     }
 
-    [[nodiscard]] inline float activation_bipolar ( float net_, float alpha_ ) noexcept {
+    [[nodiscard]] inline float activation_bipolar ( float net_, float const alpha_ ) noexcept {
         net_ *= alpha_;
         return 2.0f / ( 1.0f + std::exp ( -2.0f * net_ ) ) - 1.0f;
     }
-
-    [[nodiscard]] inline float activation_elliotsig ( float net_, float alpha_ ) noexcept {
+    [[nodiscard]] inline float activation_elliotsig ( float net_, float const alpha_ ) noexcept {
         net_ *= alpha_;
         return net_ / ( 1.0f + std::abs ( net_ ) );
     }
