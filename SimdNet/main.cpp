@@ -49,10 +49,10 @@
 #include "../../multi_array/include/multi_array.hpp"
 #include "fcc.hpp"
 
-template<int S = 39>
+template<int S>
 struct SnakeSpace {
 
-    static_assert ( S % 2 == 0, "uneven size only" );
+    static_assert ( S % 2 != 0, "uneven size only" );
 
     static constexpr int Base = -( S / 2 );
     static constexpr int Size = S;
@@ -73,6 +73,8 @@ struct SnakeSpace {
 };
 
 int main ( ) {
+
+    SnakeSpace<39> ss;
 
     constexpr int in = 128;
 
