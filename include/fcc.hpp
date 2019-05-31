@@ -26,14 +26,13 @@
 #include <cstdint>
 #include <cstdlib>
 
+#include <mkl.h>
+
 #include <algorithm>
 #include <array>
 #include <random>
 #include <sax/iostream.hpp>
 #include <span>
-#include <type_traits>
-
-#include <mkl.h>
 
 #include "rng.hpp"
 
@@ -64,8 +63,8 @@ struct InputBiasOutput {
     template<typename Stream>
     [[maybe_unused]] friend Stream & operator<< ( Stream & out_, ibo_type const & d_ ) noexcept {
         for ( auto const v : d_.m_data )
-            std::cout << v << ' ';
-        std::cout << nl;
+            out_ << v << ' ';
+        out_ << nl;
         return out_;
     }
 
@@ -110,8 +109,8 @@ struct FullyConnectedNeuralNetwork {
     template<typename Stream>
     [[maybe_unused]] friend Stream & operator<< ( Stream & out_, wgt_type const & w_ ) noexcept {
         for ( auto const v : w_.m_weights )
-            std::cout << v << ' ';
-        std::cout << nl;
+            out_ << v << ' ';
+        out_ << nl;
         return out_;
     }
 

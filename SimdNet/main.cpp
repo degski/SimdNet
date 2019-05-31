@@ -44,8 +44,33 @@
 
 #include <plf/plf_nanotimer.h>
 
+#include <sax/uniform_int_distribution.hpp>
+
+#include "../../multi_array/include/multi_array.hpp"
 #include "fcc.hpp"
 
+template<int S = 39>
+struct SnakeSpace {
+
+    static_assert ( S % 2 == 0, "uneven size only" );
+
+    static constexpr int Base = -( S / 2 );
+    static constexpr int Size = S;
+
+    enum class Direction : char { ne = 1, ea, se, so, sw, we, nw, no };
+    enum class Object : char { none = 0, snake, food };
+
+    void new_food ( ) noexcept {
+        auto idx = [ this ]( ) { return m_dis ( Rng::gen ( ) ); };
+        int x = idx ( ), y = idx ( );
+        while ( Object::none != m_field.at ( x, y ) )
+            x = idx ( ), y = idx ( );
+        m_field.at ( x, y ) = Object::food;
+    }
+
+    sax::Matrix<Object, Size, Size, Base, Base> m_field;
+    sax::uniform_int_distribution<int> m_dis{ Base, -Base };
+};
 
 int main ( ) {
 
