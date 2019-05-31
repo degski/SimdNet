@@ -37,7 +37,7 @@
 
 #include "rng.hpp"
 
-// Space to be used for feed forward calculation.
+// Space to be used for feed-forward-calculation.
 template<int NumInput, int NumNeurons, int NumOutput>
 struct InputBiasOutput {
 
@@ -52,16 +52,8 @@ struct InputBiasOutput {
 
     InputBiasOutput ( ) noexcept { m_data[ NumInput ] = 1.0f; }
 
-    template<typename Stream>
-    [[maybe_unused]] friend Stream & operator<< ( Stream & out_, ibo_type const & m_ ) noexcept {
-        for ( auto const v : m_.m_data )
-            std::cout << v << ' ';
-        std::cout << nl;
-        return out_;
-    }
-
-    float & operator[] ( int i ) noexcept { return m_data[ i ]; }
-    float const & operator[] ( int i ) const noexcept { return m_data[ i ]; }
+    constexpr float & operator[] ( int i ) noexcept { return m_data[ i ]; }
+    constexpr float const & operator[] ( int i ) const noexcept { return m_data[ i ]; }
 
     [[nodiscard]] constexpr float * data ( ) noexcept { return m_data.data ( ); }
     [[nodiscard]] constexpr float const * data ( ) const noexcept { return m_data.data ( ); }
@@ -69,10 +61,18 @@ struct InputBiasOutput {
     [[nodiscard]] constexpr std::span<float> input ( ) noexcept { return { data ( ), NumInput }; }
     [[nodiscard]] constexpr std::span<float const> input ( ) const noexcept { return { data ( ), NumInput }; }
 
+    template<typename Stream>
+    [[maybe_unused]] friend Stream & operator<< ( Stream & out_, ibo_type const & d_ ) noexcept {
+        for ( auto const v : d_.m_data )
+            std::cout << v << ' ';
+        std::cout << nl;
+        return out_;
+    }
+
     ibo_type m_data;
 };
 
-// A fully connected feedforward cascade network.
+// A fully connected feed-forward cascade network.
 template<int NumInput, int NumNeurons, int NumOutput>
 struct FullyConnectedNeuralNetwork {
 
@@ -108,8 +108,8 @@ struct FullyConnectedNeuralNetwork {
     }
 
     template<typename Stream>
-    [[maybe_unused]] friend Stream & operator<< ( Stream & out_, wgt_type const & m_ ) noexcept {
-        for ( auto const v : m_.m_weights )
+    [[maybe_unused]] friend Stream & operator<< ( Stream & out_, wgt_type const & w_ ) noexcept {
+        for ( auto const v : w_.m_weights )
             std::cout << v << ' ';
         std::cout << nl;
         return out_;
