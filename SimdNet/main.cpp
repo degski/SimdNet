@@ -42,34 +42,59 @@
 #include <type_traits>
 #include <vector>
 
+#include <boost/circular_buffer.hpp>
+
 #include <plf/plf_nanotimer.h>
 
 #include <sax/uniform_int_distribution.hpp>
 
-#include "../../multi_array/include/multi_array.hpp"
 #include "fcc.hpp"
+
+struct Point {
+    std::int8_t x, y;
+
+    template<typename Stream>
+    [[maybe_unused]] friend Stream & operator<< ( Stream & out_, Point const & p_ ) noexcept {
+        out_ << '<' << ( int ) p_.x << ' ' << ( int ) p_.y << '>';
+        return out_;
+    }
+};
+
+template<int B>
+[[nodiscard]] Point random_point ( ) noexcept {
+    auto idx = []( ) { return static_cast<std::int8_t> ( sax::uniform_int_distribution<std::int32_t> { -B, B } ( Rng::gen ( ) ) ); };
+    return{ idx ( ), idx ( ) };
+}
 
 template<int S>
 struct SnakeSpace {
 
     static_assert ( S % 2 != 0, "uneven size only" );
 
-    static constexpr int Base = -( S / 2 );
+    static constexpr int Base = S / 2;
     static constexpr int Size = S;
 
-    enum class Direction : char { ne = 1, ea, se, so, sw, we, nw, no };
+    enum class Direction : int { ne = 1, ea, se, so, sw, we, nw, no };
     enum class Object : char { none = 0, snake, food };
 
-    void new_food ( ) noexcept {
-        auto idx = [ this ]( ) { return m_dis ( Rng::gen ( ) ); };
-        int x = idx ( ), y = idx ( );
-        while ( Object::none != m_field.at ( x, y ) )
-            x = idx ( ), y = idx ( );
-        m_field.at ( x, y ) = Object::food;
+    SnakeSpace ( ) noexcept :
+        m_food{ static_cast<std::int8_t> ( m_dis ( Rng::gen ( ) ) ), static_cast<std::int8_t> ( m_dis ( Rng::gen ( ) ) ) } {
     }
 
-    sax::Matrix<Object, Size, Size, Base, Base> m_field;
-    sax::uniform_int_distribution<int> m_dis{ Base, -Base };
+    [[nodiscard]] inline bool snake_body_contains ( Point const & p_ ) const noexcept {
+        return std::find ( std::begin ( m_snake_body ), std::end ( m_snake_body ), p_ ) != std::end ( m_snake_body );
+    }
+
+    void new_food ( ) noexcept {
+        Point f = random_point<Base> ( );
+        while ( snake_body_contains ( f ) )
+            f = random_point<Base> ( );
+        m_food = f;
+    }
+
+    boost::circular_buffer<Point> m_snake_body{ 1'024 };
+    Point m_food;
+    sax::uniform_int_distribution<std::int32_t> m_dis{ -Base, Base };
 };
 
 int main ( ) {
