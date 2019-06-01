@@ -51,19 +51,22 @@
 #include "fcc.hpp"
 
 struct Point {
-    std::int8_t x, y;
+    char x, y;
 
     template<typename Stream>
     [[maybe_unused]] friend Stream & operator<< ( Stream & out_, Point const & p_ ) noexcept {
         out_ << '<' << ( int ) p_.x << ' ' << ( int ) p_.y << '>';
         return out_;
     }
+
+    [[nodiscard]] bool operator== ( Point const & rhs_ ) const noexcept { return rhs_.x == x and rhs_.y == y; }
+    [[nodiscard]] bool operator!= ( Point const & rhs_ ) const noexcept { return not operator== ( rhs_ ); }
 };
 
 template<int B>
 [[nodiscard]] Point random_point ( ) noexcept {
-    auto idx = []( ) { return static_cast<std::int8_t> ( sax::uniform_int_distribution<std::int32_t> { -B, B } ( Rng::gen ( ) ) ); };
-    return{ idx ( ), idx ( ) };
+    auto idx = []( ) { return static_cast<char> ( sax::uniform_int_distribution<int>{ -B, B }( Rng::gen ( ) ) ); };
+    return { idx ( ), idx ( ) };
 }
 
 template<int S>
@@ -74,27 +77,64 @@ struct SnakeSpace {
     static constexpr int Base = S / 2;
     static constexpr int Size = S;
 
-    enum class Direction : int { ne = 1, ea, se, so, sw, we, nw, no };
+    enum class ScanDirection : int { ne = 1, ea, se, so, sw, we, nw, no };
+    enum class MoveDirection : int { e = 1, s, w, n };
     enum class Object : char { none = 0, snake, food };
 
-    SnakeSpace ( ) noexcept :
-        m_food{ static_cast<std::int8_t> ( m_dis ( Rng::gen ( ) ) ), static_cast<std::int8_t> ( m_dis ( Rng::gen ( ) ) ) } {
+    [[nodiscard]] inline bool in_range ( Point const & p_ ) const noexcept {
+        return p_.x >= -Base and p_.y >= -Base and p_.x <= Base and p_.y <= Base;
+    }
+    [[nodiscard]] inline bool not_in_range ( Point const & p_ ) const noexcept {
+        return not in_range ( p_ );
     }
 
     [[nodiscard]] inline bool snake_body_contains ( Point const & p_ ) const noexcept {
         return std::find ( std::begin ( m_snake_body ), std::end ( m_snake_body ), p_ ) != std::end ( m_snake_body );
     }
+    [[nodiscard]] inline bool not_snake_body_contains ( Point const & p_ ) const noexcept {
+        return std::find ( std::begin ( m_snake_body ), std::end ( m_snake_body ), p_ ) == std::end ( m_snake_body );
+    }
 
-    void new_food ( ) noexcept {
+    [[nodiscard]] inline bool valid_empty_point ( Point const & p_ ) const noexcept {
+        return in_range ( p_ ) and not_snake_body_contains ( p_ );
+    }
+    [[nodiscard]] inline bool not_valid_empty_point ( Point const & p_ ) const noexcept {
+        return not_in_range ( p_ ) or snake_body_contains ( p_ );
+    }
+
+    Point random_head ( Point const & h_ ) const noexcept { // possibility non are valid.
+        Point h;
+        do {
+            h = h_;
+            switch ( sax::uniform_int_distribution<int>{ 1, 4 }( Rng::gen ( ) ) ) {
+                case 1: ++h.x; break; // e.
+                case 2: ++h.y; break; // s.
+                case 3: --h.x; break; // w.
+                case 4: --h.x; break; // n.
+                default:;
+            }
+        } while ( not_valid_empty_point ( h ) );
+        return h;
+    }
+
+    void random_food ( ) noexcept {
         Point f = random_point<Base> ( );
         while ( snake_body_contains ( f ) )
             f = random_point<Base> ( );
         m_food = f;
     }
 
+    SnakeSpace ( ) noexcept { init ( ); }
+
+    void init ( ) noexcept {
+        m_snake_body.push_front ( random_point<Base> ( ) ); // The new tail.
+        m_snake_body.push_front ( random_head ( m_snake_body.front ( ) ) );
+        m_snake_body.push_front ( random_head ( m_snake_body.front ( ) ) ); // the new head.
+        random_food ( );
+    }
+
     boost::circular_buffer<Point> m_snake_body{ 1'024 };
     Point m_food;
-    sax::uniform_int_distribution<std::int32_t> m_dis{ -Base, Base };
 };
 
 int main ( ) {
