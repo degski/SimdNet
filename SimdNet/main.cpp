@@ -53,19 +53,25 @@
 struct Point {
     char x, y;
 
+    [[nodiscard]] bool operator== ( Point const & rhs_ ) const noexcept { return rhs_.x == x and rhs_.y == y; }
+    [[nodiscard]] bool operator!= ( Point const & rhs_ ) const noexcept { return not operator== ( rhs_ ); }
+
     template<typename Stream>
     [[maybe_unused]] friend Stream & operator<< ( Stream & out_, Point const & p_ ) noexcept {
         out_ << '<' << ( int ) p_.x << ' ' << ( int ) p_.y << '>';
         return out_;
     }
-
-    [[nodiscard]] bool operator== ( Point const & rhs_ ) const noexcept { return rhs_.x == x and rhs_.y == y; }
-    [[nodiscard]] bool operator!= ( Point const & rhs_ ) const noexcept { return not operator== ( rhs_ ); }
 };
+
+[[nodiscard]] Point operator+ ( Point && p1_, Point const & p2_ ) noexcept {
+    p1_.x += p2_.x;
+    p1_.y += p2_.y;
+    return p1_;
+}
 
 template<int B>
 [[nodiscard]] Point random_point ( ) noexcept {
-    auto idx = []( ) { return static_cast<char> ( sax::uniform_int_distribution<int>{ -B, B }( Rng::gen ( ) ) ); };
+    auto idx = [] ( ) { return static_cast<char> ( sax::uniform_int_distribution<int>{ -B, B }( Rng::gen ( ) ) ); };
     return { idx ( ), idx ( ) };
 }
 
@@ -78,43 +84,25 @@ struct SnakeSpace {
     static constexpr int Size = S;
 
     enum class ScanDirection : int { ne = 1, ea, se, so, sw, we, nw, no };
-    enum class MoveDirection : int { e = 1, s, w, n };
+    enum class MoveDirection : int { east = 1, south, west, north };
     enum class Object : char { none = 0, snake, food };
+
+    using SnakeBody = boost::circular_buffer<Point>;
 
     [[nodiscard]] inline bool in_range ( Point const & p_ ) const noexcept {
         return p_.x >= -Base and p_.y >= -Base and p_.x <= Base and p_.y <= Base;
     }
-    [[nodiscard]] inline bool not_in_range ( Point const & p_ ) const noexcept {
-        return not in_range ( p_ );
-    }
 
     [[nodiscard]] inline bool snake_body_contains ( Point const & p_ ) const noexcept {
-        return std::find ( std::begin ( m_snake_body ), std::end ( m_snake_body ), p_ ) != std::end ( m_snake_body );
-    }
-    [[nodiscard]] inline bool not_snake_body_contains ( Point const & p_ ) const noexcept {
-        return std::find ( std::begin ( m_snake_body ), std::end ( m_snake_body ), p_ ) == std::end ( m_snake_body );
+        return std::find ( std::cbegin ( m_snake_body ), std::cend ( m_snake_body ), p_ ) != std::cend ( m_snake_body );
     }
 
     [[nodiscard]] inline bool valid_empty_point ( Point const & p_ ) const noexcept {
-        return in_range ( p_ ) and not_snake_body_contains ( p_ );
-    }
-    [[nodiscard]] inline bool not_valid_empty_point ( Point const & p_ ) const noexcept {
-        return not_in_range ( p_ ) or snake_body_contains ( p_ );
+        return in_range ( p_ ) and not snake_body_contains ( p_ );
     }
 
-    Point random_head ( Point const & h_ ) const noexcept { // possibility non are valid.
-        Point h;
-        do {
-            h = h_;
-            switch ( sax::uniform_int_distribution<int>{ 1, 4 }( Rng::gen ( ) ) ) {
-                case 1: ++h.x; break; // e.
-                case 2: ++h.y; break; // s.
-                case 3: --h.x; break; // w.
-                case 4: --h.x; break; // n.
-                default:;
-            }
-        } while ( not_valid_empty_point ( h ) );
-        return h;
+    [[nodiscard]] inline MoveDirection random_move_direction ( ) const noexcept {
+        return cast ( sax::uniform_int_distribution<int>{ 1, 4 }( Rng::gen ( ) ) );
     }
 
     void random_food ( ) noexcept {
@@ -126,14 +114,63 @@ struct SnakeSpace {
 
     SnakeSpace ( ) noexcept { init ( ); }
 
-    void init ( ) noexcept {
-        m_snake_body.push_front ( random_point<Base> ( ) ); // The new tail.
-        m_snake_body.push_front ( random_head ( m_snake_body.front ( ) ) );
-        m_snake_body.push_front ( random_head ( m_snake_body.front ( ) ) ); // the new head.
+    [[nodiscard]] Point extend_head ( ) const noexcept {
+        switch ( m_direction ) {
+            case MoveDirection::east: return Point{ 1, 0 } + m_snake_body.front ( );
+            case MoveDirection::south: return Point{ 0, -1 } + m_snake_body.front ( );
+            case MoveDirection::west: return Point{ -1, 0 } + m_snake_body.front ( );
+            case MoveDirection::north: return Point{ 0, 1 } + m_snake_body.front ( );
+        }
+        return { 0, 0 };
+    }
+
+    void move ( ) noexcept {
+        m_snake_body.push_front ( extend_head ( ) );
+        m_snake_body.pop_back ( );
+    }
+
+    void move_eat ( ) noexcept {
+        m_snake_body.push_front ( extend_head ( ) );
         random_food ( );
     }
 
-    boost::circular_buffer<Point> m_snake_body{ 1'024 };
+    void init ( ) noexcept {
+        m_direction = cast ( sax::uniform_int_distribution<int>{ 1, 4 }( Rng::gen ( ) ) );
+        m_snake_body.push_front ( random_point<Base - 6> ( ) ); // the new tail.
+        m_snake_body.push_front ( extend_head ( ) );
+        m_snake_body.push_front ( extend_head ( ) ); // the new head.
+        random_food ( );
+    }
+
+    void run ( ) noexcept {
+        for ( int i = 0; i < 10; ++i ) {
+            print ( );
+            std::wcout << nl;
+            move ( );
+        }
+    }
+
+    void print ( ) const noexcept {
+        for ( int y = -Base; y < Base; ++y ) {
+            for ( int x = -Base; x < Base; ++x ) {
+                Point const p{ static_cast<char>(x), static_cast<char>(y) };
+                if ( p == m_food )
+                    std::wcout << L" o ";
+                else if ( snake_body_contains ( p ) )
+                    std::wcout << L" x ";
+                else
+                    std::wcout << L" . ";
+            }
+            std::wcout << nl;
+        }
+    }
+
+    private:
+    [[nodiscard]] static inline int cast ( MoveDirection const & d_ ) noexcept { return static_cast<int> ( d_ ); }
+    [[nodiscard]] static inline MoveDirection cast ( int const & d_ ) noexcept { return static_cast<MoveDirection> ( d_ ); }
+
+    MoveDirection m_direction;
+    SnakeBody m_snake_body{ 1'024 };
     Point m_food;
 };
 
@@ -141,6 +178,9 @@ int main ( ) {
 
     SnakeSpace<39> ss;
 
+    ss.run ( );
+
+    /*
     constexpr int in = 128;
 
     FullyConnectedNeuralNetwork<in, 150, 1> nn;
@@ -163,7 +203,7 @@ int main ( ) {
     std::cout << ( std::uint64_t ) t.get_elapsed_ms ( ) << nl;
 
     std::cout << x << nl;
-
+    */
     return EXIT_SUCCESS;
 }
 
@@ -173,7 +213,8 @@ int main ( ) {
 template<int NumInput, int NumNeurons, int NumOutput>
 struct FullyConnectedNeuralNetwork {
 
-    static_assert ( NumNeurons >= NumOutput, "number of neurons needs to be equal or larger than the number of required outputs" );
+    static_assert ( NumNeurons >= NumOutput, "number of neurons needs to be equal or larger than the number of required
+outputs" );
 
     static constexpr int NumBias    = 1;
     static constexpr int NumIns     = NumInput + NumBias;
