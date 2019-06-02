@@ -161,14 +161,14 @@ struct SnakeSpace {
 
     [[nodiscard]] static float distance_to_wall ( Point const & hp_, ScanDirection const & dir_ ) noexcept {
         switch ( dir_ ) {
-            case ScanDirection::no: return static_cast<float> ( Base - hp_.y );
-            case ScanDirection::ne: return static_cast<float> ( 2 * std::min ( Base - hp_.x, Base - hp_.y ) );
-            case ScanDirection::ea: return static_cast<float> ( Base - hp_.x );
-            case ScanDirection::se: return static_cast<float> ( 2 * std::min ( Base - hp_.x, Base + hp_.y ) );
-            case ScanDirection::so: return static_cast<float> ( Base + hp_.y );
-            case ScanDirection::sw: return static_cast<float> ( 2 * std::min ( Base + hp_.x, Base + hp_.y ) );
-            case ScanDirection::we: return static_cast<float> ( Base + hp_.x );
-            case ScanDirection::nw: return static_cast<float> ( 2 * std::min ( Base + hp_.x, Base - hp_.y ) );
+            case ScanDirection::no: return 1.0f / static_cast<float> ( Base - hp_.y + 1 );
+            case ScanDirection::ne: return 1.0f / static_cast<float> ( 2 * std::min ( Base - hp_.x, Base - hp_.y ) + 1 );
+            case ScanDirection::ea: return 1.0f / static_cast<float> ( Base - hp_.x + 1 );
+            case ScanDirection::se: return 1.0f / static_cast<float> ( 2 * std::min ( Base - hp_.x, Base + hp_.y ) + 1 );
+            case ScanDirection::so: return 1.0f / static_cast<float> ( Base + hp_.y + 1 );
+            case ScanDirection::sw: return 1.0f / static_cast<float> ( 2 * std::min ( Base + hp_.x, Base + hp_.y ) + 1 );
+            case ScanDirection::we: return 1.0f / static_cast<float> ( Base + hp_.x + 1 );
+            case ScanDirection::nw: return 1.0f / static_cast<float> ( 2 * std::min ( Base + hp_.x, Base - hp_.y ) + 1 );
         }
         return 0.0f;
     }
@@ -214,7 +214,7 @@ struct SnakeSpace {
 int main ( ) {
 
     SnakeSpace<17> ss;
-    Point p{ -8, 0 };
+    Point p{ 5, 5 };
 
     std::cout << SnakeSpace<17>::distance_to_wall ( p, SnakeSpace<17>::ScanDirection::no ) << nl;
     std::cout << SnakeSpace<17>::distance_to_wall ( p, SnakeSpace<17>::ScanDirection::ne ) << nl;
