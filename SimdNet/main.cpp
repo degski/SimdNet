@@ -81,6 +81,7 @@ struct SnakeSpace {
     static_assert ( S % 2 != 0, "uneven size only" );
 
     static constexpr int Base = S / 2;
+    static constexpr int BaseP1 = Base + 1;
     static constexpr int Size = S;
 
     enum class ScanDirection : int { no, ne, ea, se, so, sw, we, nw };
@@ -161,16 +162,16 @@ struct SnakeSpace {
 
     [[nodiscard]] static float distance_to_wall ( Point const & hp_, ScanDirection const & dir_ ) noexcept {
         switch ( dir_ ) {
-            case ScanDirection::no: return 1.0f / static_cast<float> ( Base - hp_.y + 1 );
-            case ScanDirection::ne: return 1.0f / static_cast<float> ( 2 * std::min ( Base - hp_.x, Base - hp_.y ) + 1 );
-            case ScanDirection::ea: return 1.0f / static_cast<float> ( Base - hp_.x + 1 );
-            case ScanDirection::se: return 1.0f / static_cast<float> ( 2 * std::min ( Base - hp_.x, Base + hp_.y ) + 1 );
-            case ScanDirection::so: return 1.0f / static_cast<float> ( Base + hp_.y + 1 );
-            case ScanDirection::sw: return 1.0f / static_cast<float> ( 2 * std::min ( Base + hp_.x, Base + hp_.y ) + 1 );
-            case ScanDirection::we: return 1.0f / static_cast<float> ( Base + hp_.x + 1 );
-            case ScanDirection::nw: return 1.0f / static_cast<float> ( 2 * std::min ( Base + hp_.x, Base - hp_.y ) + 1 );
+            case ScanDirection::no: return 1.0f / ( Base - hp_.y + 1 );
+            case ScanDirection::ne: return 1.0f / ( 2 * std::min ( Base - hp_.x, Base - hp_.y ) + 1 );
+            case ScanDirection::ea: return 1.0f / ( Base - hp_.x + 1 );
+            case ScanDirection::se: return 1.0f / ( 2 * std::min ( Base - hp_.x, Base + hp_.y ) + 1 );
+            case ScanDirection::so: return 1.0f / ( Base + hp_.y + 1 );
+            case ScanDirection::sw: return 1.0f / ( 2 * std::min ( Base + hp_.x, Base + hp_.y ) + 1 );
+            case ScanDirection::we: return 1.0f / ( Base + hp_.x + 1 );
+            case ScanDirection::nw: return 1.0f / ( 2 * std::min ( Base + hp_.x, Base - hp_.y ) + 1 );
         }
-        return 0.0f;
+        return NAN;
     }
 
     [[nodiscard]] static float distance_to_food ( Point const & hp_, Point const & f_, ScanDirection const & dir_ ) noexcept {
@@ -188,7 +189,7 @@ struct SnakeSpace {
             case ScanDirection::nw:
                 return hp_.x > f_.x and hp_.y < f_.y and ( hp_.x - hp_.y ) == ( f_.x - f_.y ) ? hp_.x - f_.x + hp_.x - f_.y : 1.0f;
         }
-        return 0.0f;
+        return NAN;
     }
     void print ( ) const noexcept {
         for ( int y = -Base; y <= Base; ++y ) {
@@ -214,7 +215,7 @@ struct SnakeSpace {
 int main ( ) {
 
     SnakeSpace<17> ss;
-    Point p{ 5, 5 };
+    Point p{ -8, -8 };
 
     std::cout << SnakeSpace<17>::distance_to_wall ( p, SnakeSpace<17>::ScanDirection::no ) << nl;
     std::cout << SnakeSpace<17>::distance_to_wall ( p, SnakeSpace<17>::ScanDirection::ne ) << nl;
