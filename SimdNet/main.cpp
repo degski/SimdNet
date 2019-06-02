@@ -131,8 +131,8 @@ struct SnakeSpace {
             m_snake_body.pop_back ( );
         }
         else {
-            random_food ( );
             m_energy += 50;
+            random_food ( );
         }
     }
 

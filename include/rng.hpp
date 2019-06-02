@@ -43,24 +43,24 @@
 struct Rng final {
 
     Rng ( Rng && )      = delete;
-    Rng ( const Rng & ) = delete;
+    Rng ( Rng const & ) = delete;
 
     Rng & operator= ( Rng && ) = delete;
-    Rng & operator= ( const Rng & ) = delete;
+    Rng & operator= ( Rng const & ) = delete;
 
     // A pareto-variate, the defaults give the 'famous' 80/20 distribution.
     template<typename T = float>
-    [[nodiscard]] static T pareto_variate ( const T min_   = T{ 1 },
-                                            const T alpha_ = { std::log ( T{ 5 } ) / std::log ( T{ 4 } ) } ) noexcept {
+    [[nodiscard]] static T pareto_variate ( T const min_   = T{ 1 },
+                                            T const alpha_ = { std::log ( T{ 5 } ) / std::log ( T{ 4 } ) } ) noexcept {
         assert ( min_ > T{ 0 } );
         assert ( alpha_ > T{ 0 } );
         static std::uniform_real_distribution<T> dis ( std::numeric_limits<T>::min ( ), T{ 1 } );
         return min_ / std::pow ( dis ( Rng::gen ( ) ), T{ 1 } / alpha_ );
     }
 
-    [[nodiscard]] static bool bernoulli ( double p_ = 0.5 ) noexcept { return std::bernoulli_distribution ( p_ ) ( Rng::gen ( ) ); }
+    [[nodiscard]] static bool bernoulli ( double const p_ = 0.5 ) noexcept { return std::bernoulli_distribution ( p_ ) ( Rng::gen ( ) ); }
 
-    static void seed ( const std::uint64_t s_ = 0u ) noexcept { Rng::gen ( ).seed ( s_ ? s_ : sax::os_seed ( ) ); }
+    static void seed ( std::uint64_t const s_ = 0u ) noexcept { Rng::gen ( ).seed ( s_ ? s_ : sax::os_seed ( ) ); }
 
     [[nodiscard]] static sax::Rng & gen ( ) noexcept {
         static thread_local sax::Rng generator ( RANDOM ? sax::os_seed ( ) : sax::fixed_seed ( ) );
