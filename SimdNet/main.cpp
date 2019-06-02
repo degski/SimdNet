@@ -81,7 +81,6 @@ struct SnakeSpace {
     static_assert ( S % 2 != 0, "uneven size only" );
 
     static constexpr int Base = S / 2;
-    static constexpr int BaseP1 = Base + 1;
     static constexpr int Size = S;
 
     enum class ScanDirection : int { no, ne, ea, se, so, sw, we, nw };
