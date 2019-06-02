@@ -121,8 +121,9 @@ struct SnakeSpace {
 
     void move ( ) noexcept {
         ++m_move_count;
+        --m_energy;
         m_snake_body.push_front ( extend_head ( ) );
-        if ( not in_range ( m_snake_body.front ( ) ) ) {
+        if ( not m_energy or not in_range ( m_snake_body.front ( ) ) ) {
             std::wcout << L"the grim reaper has collected his reward" << nl;
             std::exit ( EXIT_SUCCESS );
         }
@@ -131,6 +132,7 @@ struct SnakeSpace {
         }
         else {
             random_food ( );
+            m_energy += 50;
         }
     }
 
@@ -140,6 +142,7 @@ struct SnakeSpace {
     void init ( ) noexcept {
         m_direction  = static_cast<MoveDirection> ( sax::uniform_int_distribution<int>{ 0, 3 }( Rng::gen ( ) ) );
         m_move_count = 0;
+        m_energy     = 100;
         m_snake_body.push_front ( random_point<Base - 6> ( ) ); // the new tail.
         m_snake_body.push_front ( extend_head ( ) );
         m_snake_body.push_front ( extend_head ( ) ); // the new head.
@@ -202,7 +205,7 @@ struct SnakeSpace {
     }
 
     MoveDirection m_direction;
-    int m_move_count;
+    int m_move_count, m_energy;
     SnakeBody m_snake_body{ 1'024 };
     Point m_food;
 };
