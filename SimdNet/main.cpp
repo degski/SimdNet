@@ -84,7 +84,7 @@ struct SnakeSpace {
     static constexpr int Size = S;
 
     enum class ScanDirection : int { no, ne, ea, se, so, sw, we, nw };
-    enum class MoveDirection : int { north, east, south, west };
+    enum class MoveDirection : int { no, ea, so, we };
 
     using SnakeBody = boost::circular_buffer<Point>;
 
@@ -111,10 +111,10 @@ struct SnakeSpace {
 
     [[nodiscard]] Point extend_head ( ) const noexcept {
         switch ( m_direction ) {
-            case MoveDirection::north: return Point{ 0, 1 } + m_snake_body.front ( );
-            case MoveDirection::east: return Point{ 1, 0 } + m_snake_body.front ( );
-            case MoveDirection::south: return Point{ 0, -1 } + m_snake_body.front ( );
-            case MoveDirection::west: return Point{ -1, 0 } + m_snake_body.front ( );
+            case MoveDirection::no: return Point{ +0, +1 } + m_snake_body.front ( );
+            case MoveDirection::ea: return Point{ +1, +0 } + m_snake_body.front ( );
+            case MoveDirection::so: return Point{ +0, -1 } + m_snake_body.front ( );
+            case MoveDirection::we: return Point{ -1, +0 } + m_snake_body.front ( );
         }
         return { 0, 0 };
     }
