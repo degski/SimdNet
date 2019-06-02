@@ -214,7 +214,7 @@ struct SnakeSpace {
 int main ( ) {
 
     SnakeSpace<17> ss;
-    Point p{ 0, 0 };
+    Point p{ -8, 0 };
 
     std::cout << SnakeSpace<17>::distance_to_wall ( p, SnakeSpace<17>::ScanDirection::no ) << nl;
     std::cout << SnakeSpace<17>::distance_to_wall ( p, SnakeSpace<17>::ScanDirection::ne ) << nl;
