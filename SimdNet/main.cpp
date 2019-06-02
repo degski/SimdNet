@@ -84,8 +84,7 @@ struct SnakeSpace {
     static constexpr int Size = S;
 
     enum class ScanDirection : int { no, ne, ea, se, so, sw, we, nw };
-    enum class MoveDirection : int { east, south, west, north };
-    enum class Object : char { none = 0, snake, food };
+    enum class MoveDirection : int { north, east, south, west };
 
     using SnakeBody = boost::circular_buffer<Point>;
 
@@ -101,10 +100,6 @@ struct SnakeSpace {
         return in_range ( p_ ) and not snake_body_contains ( p_ );
     }
 
-    [[nodiscard]] inline MoveDirection random_move_direction ( ) const noexcept {
-        return cast ( sax::uniform_int_distribution<int>{ 0, 3 }( Rng::gen ( ) ) );
-    }
-
     void random_food ( ) noexcept {
         Point f = random_point<Base> ( );
         while ( snake_body_contains ( f ) )
@@ -116,10 +111,10 @@ struct SnakeSpace {
 
     [[nodiscard]] Point extend_head ( ) const noexcept {
         switch ( m_direction ) {
+            case MoveDirection::north: return Point{ 0, 1 } + m_snake_body.front ( );
             case MoveDirection::east: return Point{ 1, 0 } + m_snake_body.front ( );
             case MoveDirection::south: return Point{ 0, -1 } + m_snake_body.front ( );
             case MoveDirection::west: return Point{ -1, 0 } + m_snake_body.front ( );
-            case MoveDirection::north: return Point{ 0, 1 } + m_snake_body.front ( );
         }
         return { 0, 0 };
     }
@@ -128,7 +123,7 @@ struct SnakeSpace {
         ++m_move_count;
         m_snake_body.push_front ( extend_head ( ) );
         if ( not in_range ( m_snake_body.front ( ) ) ) {
-            std::wcout << L"the grip reaper has taken his reward" << nl;
+            std::wcout << L"the grim reaper has collected his reward" << nl;
             std::exit ( EXIT_SUCCESS );
         }
         else if ( m_snake_body.front ( ) != m_food ) {
@@ -159,6 +154,7 @@ struct SnakeSpace {
         }
     }
 
+    // Input for distance to wall.
     [[nodiscard]] static float distance_to_wall ( Point const & hp_, ScanDirection const & dir_ ) noexcept {
         switch ( dir_ ) {
             case ScanDirection::no: return 1.0f / ( Base - hp_.y + 1 );
@@ -214,7 +210,7 @@ struct SnakeSpace {
 int main ( ) {
 
     SnakeSpace<17> ss;
-    Point p{ -8, -8 };
+    Point p{ 8, -8 };
 
     std::cout << SnakeSpace<17>::distance_to_wall ( p, SnakeSpace<17>::ScanDirection::no ) << nl;
     std::cout << SnakeSpace<17>::distance_to_wall ( p, SnakeSpace<17>::ScanDirection::ne ) << nl;
