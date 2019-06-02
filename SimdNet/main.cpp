@@ -173,6 +173,23 @@ struct SnakeSpace {
         return 0.0f;
     }
 
+    [[nodiscard]] static float distance_to_food ( Point const & hp_, Point const & f_, ScanDirection const & dir_ ) noexcept {
+        switch ( dir_ ) {
+            case ScanDirection::no: return hp_.x == f_.x and hp_.y < f_.y ? f_.y - hp_.y : 1.0f;
+            case ScanDirection::ne:
+                return hp_.x < f_.x and hp_.y < f_.y and ( hp_.x - hp_.y ) == ( f_.x - f_.y ) ? f_.x - hp_.x + f_.y - hp_.x : 1.0f;
+            case ScanDirection::ea: return hp_.y == f_.y and hp_.x < f_.x ? f_.x - hp_.x : 1.0f;
+            case ScanDirection::se:
+                return hp_.x < f_.x and hp_.y > f_.y and ( hp_.x - hp_.y ) == ( f_.x - f_.y ) ? f_.x - hp_.x + f_.y - hp_.x : 1.0f;
+            case ScanDirection::so: return hp_.x == f_.x and hp_.y > f_.y ? hp_.y - f_.y : 1.0f;
+            case ScanDirection::sw:
+                return hp_.x > f_.x and hp_.y > f_.y and ( hp_.x - hp_.y ) == ( f_.x - f_.y ) ? hp_.x - f_.x + hp_.x - f_.y : 1.0f;
+            case ScanDirection::we: return hp_.y == f_.y and hp_.x > f_.x ? hp_.x - f_.x : 1.0f;
+            case ScanDirection::nw:
+                return hp_.x > f_.x and hp_.y < f_.y and ( hp_.x - hp_.y ) == ( f_.x - f_.y ) ? hp_.x - f_.x + hp_.x - f_.y : 1.0f;
+        }
+        return 0.0f;
+    }
     void print ( ) const noexcept {
         for ( int y = -Base; y <= Base; ++y ) {
             for ( int x = -Base; x <= Base; ++x ) {
