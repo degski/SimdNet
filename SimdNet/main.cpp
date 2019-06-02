@@ -83,8 +83,8 @@ struct SnakeSpace {
     static constexpr int Base = S / 2;
     static constexpr int Size = S;
 
-    enum class ScanDirection : int { ne = 1, ea, se, so, sw, we, nw, no };
-    enum class MoveDirection : int { east = 1, south, west, north };
+    enum class ScanDirection : int { ne, ea, se, so, sw, we, nw, no };
+    enum class MoveDirection : int { east, south, west, north };
     enum class Object : char { none = 0, snake, food };
 
     using SnakeBody = boost::circular_buffer<Point>;
@@ -102,7 +102,7 @@ struct SnakeSpace {
     }
 
     [[nodiscard]] inline MoveDirection random_move_direction ( ) const noexcept {
-        return cast ( sax::uniform_int_distribution<int>{ 1, 4 }( Rng::gen ( ) ) );
+        return cast ( sax::uniform_int_distribution<int>{ 0, 3 }( Rng::gen ( ) ) );
     }
 
     void random_food ( ) noexcept {
@@ -125,17 +125,26 @@ struct SnakeSpace {
     }
 
     void move ( ) noexcept {
+        ++m_move_count;
         m_snake_body.push_front ( extend_head ( ) );
-        m_snake_body.pop_back ( );
+        if ( not in_range ( m_snake_body.front ( ) ) ) {
+            std::wcout << L"the grip reaper has taken his reward" << nl;
+            std::exit ( EXIT_SUCCESS );
+        }
+        else if ( m_snake_body.front ( ) != m_food ) {
+            m_snake_body.pop_back ( );
+        }
+        else {
+            random_food ( );
+        }
     }
 
-    void move_eat ( ) noexcept {
-        m_snake_body.push_front ( extend_head ( ) );
-        random_food ( );
-    }
+    void turn_right ( ) noexcept { m_direction = static_cast<MoveDirection> ( ( static_cast<int> ( m_direction ) + 3 ) % 4 ); }
+    void turn_left ( ) noexcept { m_direction = static_cast<MoveDirection> ( ( static_cast<int> ( m_direction ) + 1 ) % 4 ); }
 
     void init ( ) noexcept {
-        m_direction = cast ( sax::uniform_int_distribution<int>{ 1, 4 }( Rng::gen ( ) ) );
+        m_direction  = static_cast<MoveDirection> ( sax::uniform_int_distribution<int>{ 0, 3 }( Rng::gen ( ) ) );
+        m_move_count = 0;
         m_snake_body.push_front ( random_point<Base - 6> ( ) ); // the new tail.
         m_snake_body.push_front ( extend_head ( ) );
         m_snake_body.push_front ( extend_head ( ) ); // the new head.
@@ -143,7 +152,7 @@ struct SnakeSpace {
     }
 
     void run ( ) noexcept {
-        for ( int i = 0; i < 10; ++i ) {
+        for ( int i = 0; i < 100; ++i ) {
             print ( );
             std::wcout << nl;
             move ( );
@@ -151,9 +160,9 @@ struct SnakeSpace {
     }
 
     void print ( ) const noexcept {
-        for ( int y = -Base; y < Base; ++y ) {
-            for ( int x = -Base; x < Base; ++x ) {
-                Point const p{ static_cast<char>(x), static_cast<char>(y) };
+        for ( int y = -Base; y <= Base; ++y ) {
+            for ( int x = -Base; x <= Base; ++x ) {
+                Point const p{ static_cast<char> ( x ), static_cast<char> ( y ) };
                 if ( p == m_food )
                     std::wcout << L" o ";
                 else if ( snake_body_contains ( p ) )
@@ -165,18 +174,15 @@ struct SnakeSpace {
         }
     }
 
-    private:
-    [[nodiscard]] static inline int cast ( MoveDirection const & d_ ) noexcept { return static_cast<int> ( d_ ); }
-    [[nodiscard]] static inline MoveDirection cast ( int const & d_ ) noexcept { return static_cast<MoveDirection> ( d_ ); }
-
     MoveDirection m_direction;
+    int m_move_count;
     SnakeBody m_snake_body{ 1'024 };
     Point m_food;
 };
 
 int main ( ) {
 
-    SnakeSpace<39> ss;
+    SnakeSpace<17> ss;
 
     ss.run ( );
 
