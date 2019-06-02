@@ -71,7 +71,7 @@ struct Point {
 
 template<int B>
 [[nodiscard]] Point random_point ( ) noexcept {
-    auto idx = [] ( ) { return static_cast<char> ( sax::uniform_int_distribution<int>{ -B, B }( Rng::gen ( ) ) ); };
+    auto idx = []( ) { return static_cast<char> ( sax::uniform_int_distribution<int>{ -B, B }( Rng::gen ( ) ) ); };
     return { idx ( ), idx ( ) };
 }
 
@@ -83,7 +83,7 @@ struct SnakeSpace {
     static constexpr int Base = S / 2;
     static constexpr int Size = S;
 
-    enum class ScanDirection : int { ne, ea, se, so, sw, we, nw, no };
+    enum class ScanDirection : int { no, ne, ea, se, so, sw, we, nw };
     enum class MoveDirection : int { east, south, west, north };
     enum class Object : char { none = 0, snake, food };
 
@@ -159,6 +159,20 @@ struct SnakeSpace {
         }
     }
 
+    [[nodiscard]] static float distance_to_wall ( Point const & hp_, ScanDirection const & dir_ ) noexcept {
+        switch ( dir_ ) {
+            case ScanDirection::no: return static_cast<float> ( std::abs ( Base - hp_.y ) );
+            case ScanDirection::ne: return static_cast<float> ( 2 * std::min ( std::abs ( Base - hp_.x ), std::abs ( Base - hp_.y ) ) );
+            case ScanDirection::ea: return static_cast<float> ( std::abs ( Base - hp_.x ) );
+            case ScanDirection::se: return static_cast<float> ( 2 * std::min ( std::abs ( Base - hp_.x ), std::abs ( -Base - hp_.y ) ) );
+            case ScanDirection::so: return static_cast<float> ( std::abs ( -Base - hp_.y ) );
+            case ScanDirection::sw: return static_cast<float> ( 2 * std::min ( std::abs ( -Base - hp_.x ), std::abs ( -Base - hp_.y ) ) );
+            case ScanDirection::we: return static_cast<float> ( std::abs ( -Base - hp_.x ) );
+            case ScanDirection::nw: return static_cast<float> ( 2 * std::min ( std::abs ( -Base - hp_.x ), std::abs ( Base - hp_.y ) ) );
+        }
+        return 0.0f;
+    }
+
     void print ( ) const noexcept {
         for ( int y = -Base; y <= Base; ++y ) {
             for ( int x = -Base; x <= Base; ++x ) {
@@ -183,8 +197,18 @@ struct SnakeSpace {
 int main ( ) {
 
     SnakeSpace<17> ss;
+    Point p{ -8, 7 };
 
-    ss.run ( );
+    std::cout << SnakeSpace<17>::distance_to_wall ( p, SnakeSpace<17>::ScanDirection::no ) << nl;
+    std::cout << SnakeSpace<17>::distance_to_wall ( p, SnakeSpace<17>::ScanDirection::ne ) << nl;
+    std::cout << SnakeSpace<17>::distance_to_wall ( p, SnakeSpace<17>::ScanDirection::ea ) << nl;
+    std::cout << SnakeSpace<17>::distance_to_wall ( p, SnakeSpace<17>::ScanDirection::nw ) << nl;
+    std::cout << SnakeSpace<17>::distance_to_wall ( p, SnakeSpace<17>::ScanDirection::so ) << nl;
+    std::cout << SnakeSpace<17>::distance_to_wall ( p, SnakeSpace<17>::ScanDirection::sw ) << nl;
+    std::cout << SnakeSpace<17>::distance_to_wall ( p, SnakeSpace<17>::ScanDirection::we ) << nl;
+    std::cout << SnakeSpace<17>::distance_to_wall ( p, SnakeSpace<17>::ScanDirection::se ) << nl;
+
+    // ss.run ( );
 
     /*
     constexpr int in = 128;
