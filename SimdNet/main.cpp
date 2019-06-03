@@ -71,7 +71,7 @@ struct Point {
 
 template<int B>
 [[nodiscard]] Point random_point ( ) noexcept {
-    auto idx = []( ) { return static_cast<char> ( sax::uniform_int_distribution<int>{ -B, B }( Rng::gen ( ) ) ); };
+    auto idx = [] ( ) { return static_cast<char> ( sax::uniform_int_distribution<int>{ -B, B }( Rng::gen ( ) ) ); };
     return { idx ( ), idx ( ) };
 }
 
@@ -157,7 +157,7 @@ struct SnakeSpace {
         }
     }
 
-    // Input for distance to wall.
+    // Input (activation) for distance to wall.
     [[nodiscard]] static float distance_to_wall ( Point const & hp_, ScanDirection const & dir_ ) noexcept {
         switch ( dir_ ) {
             case ScanDirection::no: return 1.0f / ( Base - hp_.y + 1 );
@@ -172,21 +172,29 @@ struct SnakeSpace {
         return NAN;
     }
 
+    // Input (activation) for distance to food.
     [[nodiscard]] static float distance_to_food ( Point const & hp_, Point const & f_, ScanDirection const & dir_ ) noexcept {
         switch ( dir_ ) {
-            case ScanDirection::no: return hp_.x == f_.x and hp_.y < f_.y ? f_.y - hp_.y : 1.0f;
+            case ScanDirection::no: return hp_.x == f_.x and hp_.y < f_.y ? 1.0f / ( f_.y - hp_.y ) : 0.0f;
             case ScanDirection::ne:
-                return hp_.x < f_.x and hp_.y < f_.y and ( hp_.x - hp_.y ) == ( f_.x - f_.y ) ? f_.x - hp_.x + f_.y - hp_.x : 1.0f;
-            case ScanDirection::ea: return hp_.y == f_.y and hp_.x < f_.x ? f_.x - hp_.x : 1.0f;
+                return hp_.x < f_.x and hp_.y < f_.y and ( ( hp_.x - hp_.y ) == ( f_.x - f_.y ) )
+                           ? 1.0f / ( ( f_.x - hp_.x ) + ( f_.y - hp_.y ) )
+                           : 0.0f;
+            case ScanDirection::ea: return hp_.y == f_.y and hp_.x < f_.x ? 1.0f / ( f_.x - hp_.x ) : 0.0f;
             case ScanDirection::se:
-                return hp_.x < f_.x and hp_.y > f_.y and ( hp_.x - hp_.y ) == ( f_.x - f_.y ) ? f_.x - hp_.x + f_.y - hp_.x : 1.0f;
-            case ScanDirection::so: return hp_.x == f_.x and hp_.y > f_.y ? hp_.y - f_.y : 1.0f;
+                return hp_.x < f_.x and hp_.y > f_.y and ( ( hp_.x + hp_.y ) == ( f_.x + f_.y ) )
+                           ? 1.0f / ( ( f_.x - hp_.x ) + ( hp_.y - f_.y ) )
+                           : 0.0f;
+            case ScanDirection::so: return hp_.x == f_.x and hp_.y > f_.y ? 1.0f / ( hp_.y - f_.y ) : 0.0f;
             case ScanDirection::sw:
-                return hp_.x > f_.x and hp_.y > f_.y and ( hp_.x - hp_.y ) == ( f_.x - f_.y ) ? hp_.x - f_.x + hp_.x - f_.y : 1.0f;
-            case ScanDirection::we: return hp_.y == f_.y and hp_.x > f_.x ? hp_.x - f_.x : 1.0f;
+                return hp_.x > f_.x and hp_.y > f_.y and ( ( hp_.x - hp_.y ) == ( f_.x - f_.y ) )
+                           ? 1.0f / ( ( hp_.x - f_.x ) + ( hp_.y - f_.y ) )
+                           : 0.0f;
+            case ScanDirection::we: return hp_.y == f_.y and hp_.x > f_.x ? 1.0f / ( hp_.x - f_.x ) : 0.0f;
             case ScanDirection::nw:
                 return hp_.x > f_.x and hp_.y < f_.y and ( ( hp_.x + hp_.y ) == ( f_.x + f_.y ) )
-                           ? ( ( hp_.x - f_.x ) + ( f_.y - hp_.y ) ) : 1.0f;
+                           ? 1.0f / ( ( hp_.x - f_.x ) + ( f_.y - hp_.y ) )
+                           : 0.0f;
         }
         return NAN;
     }
@@ -214,8 +222,8 @@ struct SnakeSpace {
 int main ( ) {
 
     SnakeSpace<17> ss;
-    Point p{ +8, -7 };
-    Point f{ +6, -5 };
+    Point f{ -8, -8 };
+    Point p{ 6, 6 };
 
     std::cout << SnakeSpace<17>::distance_to_food ( p, f, SnakeSpace<17>::ScanDirection::no ) << nl;
     std::cout << SnakeSpace<17>::distance_to_food ( p, f, SnakeSpace<17>::ScanDirection::ne ) << nl;
