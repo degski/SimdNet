@@ -58,7 +58,9 @@ struct Rng final {
         return min_ / std::pow ( dis ( Rng::gen ( ) ), T{ 1 } / alpha_ );
     }
 
-    [[nodiscard]] static bool bernoulli ( double const p_ = 0.5 ) noexcept { return std::bernoulli_distribution ( p_ ) ( Rng::gen ( ) ); }
+    [[nodiscard]] static bool bernoulli ( double const p_ = 0.5 ) noexcept {
+        return std::bernoulli_distribution ( p_ ) ( Rng::gen ( ) );
+    }
 
     static void seed ( std::uint64_t const s_ = 0u ) noexcept { Rng::gen ( ).seed ( s_ ? s_ : sax::os_seed ( ) ); }
 

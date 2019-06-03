@@ -26,6 +26,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
 
 #include <algorithm>
 #include <array>
@@ -200,6 +201,25 @@ struct SnakeSpace {
         return NAN;
     }
 
+    static void distances_point_to_point ( float * out_, Point const & p0_, Point const & p1_ ) noexcept {
+        out_[ 0 ] = p0_.x != p1_.x or p0_.y >= p1_.y ? 0.0f : 1.0f / ( p1_.y - p0_.y );
+        out_[ 1 ] = p0_.x >= p1_.x or p0_.y >= p1_.y or ( ( p0_.x - p0_.y ) != ( p1_.x - p1_.y ) )
+                        ? 0.0f
+                        : 1.0f / ( ( p1_.x - p0_.x ) + ( p1_.y - p0_.y ) );
+        out_[ 2 ] = p0_.y != p1_.y or p0_.x >= p1_.x ? 0.0f : 1.0f / ( p1_.x - p0_.x );
+        out_[ 3 ] = p0_.x >= p1_.x or p0_.y <= p1_.y or ( ( p0_.x + p0_.y ) != ( p1_.x + p1_.y ) )
+                        ? 0.0f
+                        : 1.0f / ( ( p1_.x - p0_.x ) + ( p0_.y - p1_.y ) );
+        out_[ 4 ] = p0_.x != p1_.x or p0_.y <= p1_.y ? 0.0f : 1.0f / ( p0_.y - p1_.y );
+        out_[ 5 ] = p0_.x <= p1_.x or p0_.y <= p1_.y or ( ( p0_.x - p0_.y ) != ( p1_.x - p1_.y ) )
+                        ? 0.0f
+                        : 1.0f / ( ( p0_.x - p1_.x ) + ( p0_.y - p1_.y ) );
+        out_[ 6 ] = p0_.y != p1_.y or p0_.x <= p1_.x ? 0.0f : 1.0f / ( p0_.x - p1_.x );
+        out_[ 7 ] = p0_.x <= p1_.x or p0_.y >= p1_.y or ( ( p0_.x + p0_.y ) != ( p1_.x + p1_.y ) )
+                        ? 0.0f
+                        : 1.0f / ( ( p0_.x - p1_.x ) + ( p1_.y - p0_.y ) );
+    }
+
     [[nodiscard]] float distance_to_body ( ScanDirection const & dir_ ) const noexcept {
         Point const head = m_snake_body.front ( );
         float distance   = 0.0f;
@@ -212,6 +232,34 @@ struct SnakeSpace {
             ++it;
         }
         return distance;
+    }
+
+    void distances_to_body ( float * dist_ ) const noexcept {
+        std::memset ( dist_, 0, 8 * sizeof ( float ) );
+        Point const & head = m_snake_body.front ( );
+        auto const end   = std::end ( m_snake_body );
+        auto it          = std::next ( std::begin ( m_snake_body ) );
+        while ( it != end ) {
+            float d[ 8 ];
+            distances_point_to_point ( d, head, *it );
+            if ( d[ 0 ] > dist_[ 0 ] )
+                dist_[ 0 ] = d[ 0 ];
+            if ( d[ 1 ] > dist_[ 1 ] )
+                dist_[ 1 ] = d[ 1 ];
+            if ( d[ 2 ] > dist_[ 2 ] )
+                dist_[ 2 ] = d[ 2 ];
+            if ( d[ 3 ] > dist_[ 3 ] )
+                dist_[ 3 ] = d[ 3 ];
+            if ( d[ 4 ] > dist_[ 4 ] )
+                dist_[ 4 ] = d[ 4 ];
+            if ( d[ 5 ] > dist_[ 5 ] )
+                dist_[ 5 ] = d[ 5 ];
+            if ( d[ 6 ] > dist_[ 6 ] )
+                dist_[ 6 ] = d[ 6 ];
+            if ( d[ 7 ] > dist_[ 7 ] )
+                dist_[ 7 ] = d[ 7 ];
+            ++it;
+        }
     }
 
     void print ( ) const noexcept {
@@ -243,7 +291,6 @@ int main ( ) {
 
     SnakeSpace<17> ss;
 
-
     Point f{ -8, -8 };
     Point p{ 6, 6 };
 
@@ -256,6 +303,13 @@ int main ( ) {
     std::cout << SnakeSpace<17>::distance_point_to_point ( p, f, SnakeSpace<17>::ScanDirection::we ) << nl;
     std::cout << SnakeSpace<17>::distance_point_to_point ( p, f, SnakeSpace<17>::ScanDirection::se ) << nl;
 
+    float dists[ 8 ];
+
+    SnakeSpace<17>::distances_point_to_point ( dists, p, f );
+
+    for ( auto f : dists )
+        std::cout << f << ' ';
+    std::cout << nl;
 
     ss.print ( );
 
@@ -267,6 +321,16 @@ int main ( ) {
     std::cout << ss.distance_to_body ( SnakeSpace<17>::ScanDirection::sw ) << nl;
     std::cout << ss.distance_to_body ( SnakeSpace<17>::ScanDirection::we ) << nl;
     std::cout << ss.distance_to_body ( SnakeSpace<17>::ScanDirection::se ) << nl;
+
+    float dists2[ 8 ];
+
+    ss.distances_to_body ( dists2 );
+
+    for ( auto f : dists2 )
+        std::cout << f << ' ';
+    std::cout << nl;
+
+    ss.print ( );
 
     // ss.run ( );
 
