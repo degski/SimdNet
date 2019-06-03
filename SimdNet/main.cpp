@@ -185,7 +185,8 @@ struct SnakeSpace {
                 return hp_.x > f_.x and hp_.y > f_.y and ( hp_.x - hp_.y ) == ( f_.x - f_.y ) ? hp_.x - f_.x + hp_.x - f_.y : 1.0f;
             case ScanDirection::we: return hp_.y == f_.y and hp_.x > f_.x ? hp_.x - f_.x : 1.0f;
             case ScanDirection::nw:
-                return hp_.x > f_.x and hp_.y < f_.y and ( hp_.x - hp_.y ) == ( f_.x - f_.y ) ? hp_.x - f_.x + hp_.x - f_.y : 1.0f;
+                return hp_.x > f_.x and hp_.y < f_.y and ( ( hp_.x + hp_.y ) == ( f_.x + f_.y ) )
+                           ? ( ( hp_.x - f_.x ) + ( f_.y - hp_.y ) ) : 1.0f;
         }
         return NAN;
     }
@@ -213,16 +214,17 @@ struct SnakeSpace {
 int main ( ) {
 
     SnakeSpace<17> ss;
-    Point p{ 8, -8 };
+    Point p{ +8, -7 };
+    Point f{ +6, -5 };
 
-    std::cout << SnakeSpace<17>::distance_to_wall ( p, SnakeSpace<17>::ScanDirection::no ) << nl;
-    std::cout << SnakeSpace<17>::distance_to_wall ( p, SnakeSpace<17>::ScanDirection::ne ) << nl;
-    std::cout << SnakeSpace<17>::distance_to_wall ( p, SnakeSpace<17>::ScanDirection::ea ) << nl;
-    std::cout << SnakeSpace<17>::distance_to_wall ( p, SnakeSpace<17>::ScanDirection::nw ) << nl;
-    std::cout << SnakeSpace<17>::distance_to_wall ( p, SnakeSpace<17>::ScanDirection::so ) << nl;
-    std::cout << SnakeSpace<17>::distance_to_wall ( p, SnakeSpace<17>::ScanDirection::sw ) << nl;
-    std::cout << SnakeSpace<17>::distance_to_wall ( p, SnakeSpace<17>::ScanDirection::we ) << nl;
-    std::cout << SnakeSpace<17>::distance_to_wall ( p, SnakeSpace<17>::ScanDirection::se ) << nl;
+    std::cout << SnakeSpace<17>::distance_to_food ( p, f, SnakeSpace<17>::ScanDirection::no ) << nl;
+    std::cout << SnakeSpace<17>::distance_to_food ( p, f, SnakeSpace<17>::ScanDirection::ne ) << nl;
+    std::cout << SnakeSpace<17>::distance_to_food ( p, f, SnakeSpace<17>::ScanDirection::ea ) << nl;
+    std::cout << SnakeSpace<17>::distance_to_food ( p, f, SnakeSpace<17>::ScanDirection::nw ) << nl;
+    std::cout << SnakeSpace<17>::distance_to_food ( p, f, SnakeSpace<17>::ScanDirection::so ) << nl;
+    std::cout << SnakeSpace<17>::distance_to_food ( p, f, SnakeSpace<17>::ScanDirection::sw ) << nl;
+    std::cout << SnakeSpace<17>::distance_to_food ( p, f, SnakeSpace<17>::ScanDirection::we ) << nl;
+    std::cout << SnakeSpace<17>::distance_to_food ( p, f, SnakeSpace<17>::ScanDirection::se ) << nl;
 
     // ss.run ( );
 
