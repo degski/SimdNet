@@ -26,7 +26,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
-#include <cstring>
 
 #include <algorithm>
 #include <array>
@@ -235,11 +234,11 @@ struct SnakeSpace {
     }
 
     void distances_to_body ( float * dist_ ) const noexcept {
-        std::memset ( dist_, 0, 8 * sizeof ( float ) );
         Point const & head = m_snake_body.front ( );
-        auto const end   = std::end ( m_snake_body );
-        auto it          = std::next ( std::begin ( m_snake_body ) );
-        while ( it != end ) {
+        auto const end     = std::end ( m_snake_body );
+        auto it            = std::next ( std::begin ( m_snake_body ) ); // This assumes the length of the snake is at least 2.
+        distances_point_to_point ( dist_, head, *it );
+        while ( ++it != end ) {
             float d[ 8 ];
             distances_point_to_point ( d, head, *it );
             if ( d[ 0 ] > dist_[ 0 ] )
@@ -258,7 +257,6 @@ struct SnakeSpace {
                 dist_[ 6 ] = d[ 6 ];
             if ( d[ 7 ] > dist_[ 7 ] )
                 dist_[ 7 ] = d[ 7 ];
-            ++it;
         }
     }
 
