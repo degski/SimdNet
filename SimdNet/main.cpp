@@ -237,9 +237,9 @@ struct SnakeSpace {
         Point const & head = m_snake_body.front ( );
         auto const end     = std::end ( m_snake_body );
         auto it            = std::next ( std::begin ( m_snake_body ) ); // This assumes the length of the snake is at least 2.
+        float d[ 8 ];
         distances_point_to_point ( dist_, head, *it );
         while ( ++it != end ) {
-            float d[ 8 ];
             distances_point_to_point ( d, head, *it );
             if ( d[ 0 ] > dist_[ 0 ] )
                 dist_[ 0 ] = d[ 0 ];
