@@ -172,40 +172,60 @@ struct SnakeSpace {
         return NAN;
     }
 
-    // Input (activation) for distance to food.
-    [[nodiscard]] static float distance_to_food ( Point const & hp_, Point const & f_, ScanDirection const & dir_ ) noexcept {
+    // Input (activation) for distance to point.
+    [[nodiscard]] static float distance_point_to_point ( Point const & p0_, Point const & p1_,
+                                                         ScanDirection const & dir_ ) noexcept {
         switch ( dir_ ) {
-            case ScanDirection::no: return hp_.x == f_.x and hp_.y < f_.y ? 1.0f / ( f_.y - hp_.y ) : 0.0f;
+            case ScanDirection::no: return p0_.x != p1_.x or p0_.y >= p1_.y ? 0.0f : 1.0f / ( p1_.y - p0_.y );
             case ScanDirection::ne:
-                return hp_.x < f_.x and hp_.y < f_.y and ( ( hp_.x - hp_.y ) == ( f_.x - f_.y ) )
-                           ? 1.0f / ( ( f_.x - hp_.x ) + ( f_.y - hp_.y ) )
-                           : 0.0f;
-            case ScanDirection::ea: return hp_.y == f_.y and hp_.x < f_.x ? 1.0f / ( f_.x - hp_.x ) : 0.0f;
+                return p0_.x >= p1_.x or p0_.y >= p1_.y or ( ( p0_.x - p0_.y ) != ( p1_.x - p1_.y ) )
+                           ? 0.0f
+                           : 1.0f / ( ( p1_.x - p0_.x ) + ( p1_.y - p0_.y ) );
+            case ScanDirection::ea: return p0_.y != p1_.y or p0_.x >= p1_.x ? 0.0f : 1.0f / ( p1_.x - p0_.x );
             case ScanDirection::se:
-                return hp_.x < f_.x and hp_.y > f_.y and ( ( hp_.x + hp_.y ) == ( f_.x + f_.y ) )
-                           ? 1.0f / ( ( f_.x - hp_.x ) + ( hp_.y - f_.y ) )
-                           : 0.0f;
-            case ScanDirection::so: return hp_.x == f_.x and hp_.y > f_.y ? 1.0f / ( hp_.y - f_.y ) : 0.0f;
+                return p0_.x >= p1_.x or p0_.y <= p1_.y or ( ( p0_.x + p0_.y ) != ( p1_.x + p1_.y ) )
+                           ? 0.0f
+                           : 1.0f / ( ( p1_.x - p0_.x ) + ( p0_.y - p1_.y ) );
+            case ScanDirection::so: return p0_.x != p1_.x or p0_.y <= p1_.y ? 0.0f : 1.0f / ( p0_.y - p1_.y );
             case ScanDirection::sw:
-                return hp_.x > f_.x and hp_.y > f_.y and ( ( hp_.x - hp_.y ) == ( f_.x - f_.y ) )
-                           ? 1.0f / ( ( hp_.x - f_.x ) + ( hp_.y - f_.y ) )
-                           : 0.0f;
-            case ScanDirection::we: return hp_.y == f_.y and hp_.x > f_.x ? 1.0f / ( hp_.x - f_.x ) : 0.0f;
+                return p0_.x <= p1_.x or p0_.y <= p1_.y or ( ( p0_.x - p0_.y ) != ( p1_.x - p1_.y ) )
+                           ? 0.0f
+                           : 1.0f / ( ( p0_.x - p1_.x ) + ( p0_.y - p1_.y ) );
+            case ScanDirection::we: return p0_.y != p1_.y or p0_.x <= p1_.x ? 0.0f : 1.0f / ( p0_.x - p1_.x );
             case ScanDirection::nw:
-                return hp_.x > f_.x and hp_.y < f_.y and ( ( hp_.x + hp_.y ) == ( f_.x + f_.y ) )
-                           ? 1.0f / ( ( hp_.x - f_.x ) + ( f_.y - hp_.y ) )
-                           : 0.0f;
+                return p0_.x <= p1_.x or p0_.y >= p1_.y or ( ( p0_.x + p0_.y ) != ( p1_.x + p1_.y ) )
+                           ? 0.0f
+                           : 1.0f / ( ( p0_.x - p1_.x ) + ( p1_.y - p0_.y ) );
         }
         return NAN;
     }
+
+    [[nodiscard]] float distance_to_body ( ScanDirection const & dir_ ) const noexcept {
+        Point const head = m_snake_body.front ( );
+        float distance   = 0.0f;
+        auto const end   = std::end ( m_snake_body );
+        auto it          = std::next ( std::begin ( m_snake_body ) );
+        while ( it != end ) {
+            float const d = distance_point_to_point ( head, *it, dir_ );
+            if ( d > distance )
+                distance = d;
+            ++it;
+        }
+        return distance;
+    }
+
     void print ( ) const noexcept {
         for ( int y = -Base; y <= Base; ++y ) {
             for ( int x = -Base; x <= Base; ++x ) {
                 Point const p{ static_cast<char> ( x ), static_cast<char> ( y ) };
                 if ( p == m_food )
                     std::wcout << L" o ";
-                else if ( snake_body_contains ( p ) )
-                    std::wcout << L" x ";
+                else if ( snake_body_contains ( p ) ) {
+                    if ( p == m_snake_body.front ( ) )
+                        std::wcout << L" x ";
+                    else
+                        std::wcout << L" s ";
+                }
                 else
                     std::wcout << L" . ";
             }
@@ -222,17 +242,31 @@ struct SnakeSpace {
 int main ( ) {
 
     SnakeSpace<17> ss;
+
+
     Point f{ -8, -8 };
     Point p{ 6, 6 };
 
-    std::cout << SnakeSpace<17>::distance_to_food ( p, f, SnakeSpace<17>::ScanDirection::no ) << nl;
-    std::cout << SnakeSpace<17>::distance_to_food ( p, f, SnakeSpace<17>::ScanDirection::ne ) << nl;
-    std::cout << SnakeSpace<17>::distance_to_food ( p, f, SnakeSpace<17>::ScanDirection::ea ) << nl;
-    std::cout << SnakeSpace<17>::distance_to_food ( p, f, SnakeSpace<17>::ScanDirection::nw ) << nl;
-    std::cout << SnakeSpace<17>::distance_to_food ( p, f, SnakeSpace<17>::ScanDirection::so ) << nl;
-    std::cout << SnakeSpace<17>::distance_to_food ( p, f, SnakeSpace<17>::ScanDirection::sw ) << nl;
-    std::cout << SnakeSpace<17>::distance_to_food ( p, f, SnakeSpace<17>::ScanDirection::we ) << nl;
-    std::cout << SnakeSpace<17>::distance_to_food ( p, f, SnakeSpace<17>::ScanDirection::se ) << nl;
+    std::cout << SnakeSpace<17>::distance_point_to_point ( p, f, SnakeSpace<17>::ScanDirection::no ) << nl;
+    std::cout << SnakeSpace<17>::distance_point_to_point ( p, f, SnakeSpace<17>::ScanDirection::ne ) << nl;
+    std::cout << SnakeSpace<17>::distance_point_to_point ( p, f, SnakeSpace<17>::ScanDirection::ea ) << nl;
+    std::cout << SnakeSpace<17>::distance_point_to_point ( p, f, SnakeSpace<17>::ScanDirection::nw ) << nl;
+    std::cout << SnakeSpace<17>::distance_point_to_point ( p, f, SnakeSpace<17>::ScanDirection::so ) << nl;
+    std::cout << SnakeSpace<17>::distance_point_to_point ( p, f, SnakeSpace<17>::ScanDirection::sw ) << nl;
+    std::cout << SnakeSpace<17>::distance_point_to_point ( p, f, SnakeSpace<17>::ScanDirection::we ) << nl;
+    std::cout << SnakeSpace<17>::distance_point_to_point ( p, f, SnakeSpace<17>::ScanDirection::se ) << nl;
+
+
+    ss.print ( );
+
+    std::cout << ss.distance_to_body ( SnakeSpace<17>::ScanDirection::no ) << nl;
+    std::cout << ss.distance_to_body ( SnakeSpace<17>::ScanDirection::ne ) << nl;
+    std::cout << ss.distance_to_body ( SnakeSpace<17>::ScanDirection::ea ) << nl;
+    std::cout << ss.distance_to_body ( SnakeSpace<17>::ScanDirection::nw ) << nl;
+    std::cout << ss.distance_to_body ( SnakeSpace<17>::ScanDirection::so ) << nl;
+    std::cout << ss.distance_to_body ( SnakeSpace<17>::ScanDirection::sw ) << nl;
+    std::cout << ss.distance_to_body ( SnakeSpace<17>::ScanDirection::we ) << nl;
+    std::cout << ss.distance_to_body ( SnakeSpace<17>::ScanDirection::se ) << nl;
 
     // ss.run ( );
 
