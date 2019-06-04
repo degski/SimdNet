@@ -69,9 +69,13 @@ struct Point {
     return p1_;
 }
 
+[[nodiscard]] Point operator- ( Point const & p1_, Point const & p2_ ) noexcept {
+    return { static_cast<char> ( p1_.x - p2_.x ), static_cast<char> ( p1_.y - p2_.y ) };
+}
+
 template<int B>
 [[nodiscard]] Point random_point ( ) noexcept {
-    auto idx = [] ( ) { return static_cast<char> ( sax::uniform_int_distribution<int>{ -B, B }( Rng::gen ( ) ) ); };
+    auto idx = []( ) { return static_cast<char> ( sax::uniform_int_distribution<int>{ -B, B }( Rng::gen ( ) ) ); };
     return { idx ( ), idx ( ) };
 }
 
@@ -219,6 +223,17 @@ struct SnakeSpace {
                         : 1.0f / ( ( p0_.x - p1_.x ) + ( p1_.y - p0_.y ) );
     }
 
+    static void distances_point_to_point2 ( float * out_, Point const & p0_, Point const & p1_ ) noexcept {
+        std::memset ( out_, 0, 8 * sizeof ( float ) );
+        Point const s = p0_ - p1_;
+        if ( 0 == s.x ) {
+            if ( s.y > 0 )
+                out_[ 0 ] = 1.0f / s.y;
+            else
+                out_[ 4 ] = 1.0f / s.y;
+        }
+    }
+
     [[nodiscard]] float distance_to_body ( ScanDirection const & dir_ ) const noexcept {
         Point const head = m_snake_body.front ( );
         float distance   = 0.0f;
@@ -285,7 +300,79 @@ struct SnakeSpace {
     Point m_food;
 };
 
+void distances_point_to_point ( float * out_, Point const & p0_, Point const & p1_ ) noexcept {
+    out_[ 0 ] = p0_.x != p1_.x or p0_.y >= p1_.y ? 0.0f : 1.0f / ( p1_.y - p0_.y );
+    out_[ 1 ] = p0_.x >= p1_.x or p0_.y >= p1_.y or ( ( p0_.x - p0_.y ) != ( p1_.x - p1_.y ) )
+                    ? 0.0f
+                    : 1.0f / ( ( p1_.x - p0_.x ) + ( p1_.y - p0_.y ) );
+    out_[ 2 ] = p0_.y != p1_.y or p0_.x >= p1_.x ? 0.0f : 1.0f / ( p1_.x - p0_.x );
+    out_[ 3 ] = p0_.x >= p1_.x or p0_.y <= p1_.y or ( ( p0_.x + p0_.y ) != ( p1_.x + p1_.y ) )
+                    ? 0.0f
+                    : 1.0f / ( ( p1_.x - p0_.x ) + ( p0_.y - p1_.y ) );
+    out_[ 4 ] = p0_.x != p1_.x or p0_.y <= p1_.y ? 0.0f : 1.0f / ( p0_.y - p1_.y );
+    out_[ 5 ] = p0_.x <= p1_.x or p0_.y <= p1_.y or ( ( p0_.x - p0_.y ) != ( p1_.x - p1_.y ) )
+                    ? 0.0f
+                    : 1.0f / ( ( p0_.x - p1_.x ) + ( p0_.y - p1_.y ) );
+    out_[ 6 ] = p0_.y != p1_.y or p0_.x <= p1_.x ? 0.0f : 1.0f / ( p0_.x - p1_.x );
+    out_[ 7 ] = p0_.x <= p1_.x or p0_.y >= p1_.y or ( ( p0_.x + p0_.y ) != ( p1_.x + p1_.y ) )
+                    ? 0.0f
+                    : 1.0f / ( ( p0_.x - p1_.x ) + ( p1_.y - p0_.y ) );
+}
+
+void dp2p ( float * out_, Point const & p0_, Point const & p1_ ) noexcept {
+    Point const s = p0_ - p1_;
+    if ( 0 == s.x ) {
+        if ( s.y < 0 )
+            out_[ 0 ] = 1.0f / -s.y;
+        else
+            out_[ 4 ] = 1.0f / +s.y;
+        return;
+    }
+    if ( s.x == s.y ) {
+        if ( s.x < 0 )
+            out_[ 1 ] = 0.5f / -s.x;
+        else
+            out_[ 5 ] = 0.5f / +s.x;
+        return;
+    }
+    if ( 0 == s.y ) {
+        if ( s.x < 0 )
+            out_[ 2 ] = 1.0f / -s.x;
+        else
+            out_[ 6 ] = 1.0f / +s.x;
+        return;
+    }
+    if ( s.x == -s.y ) {
+        if ( s.x < 0 )
+            out_[ 3 ] = 0.5f / -s.x;
+        else
+            out_[ 7 ] = 0.5f / +s.x;
+        return;
+    }
+}
+
 int main ( ) {
+
+    Point b{ 8, -7 };
+    Point h{ -2, 1 };
+
+    float dists1[ 8 ]{};
+
+    dp2p ( dists1, b, h );
+
+    for ( auto f : dists1 )
+        std::cout << f << ' ';
+    std::cout << nl;
+
+    float dists2[ 8 ]{};
+
+    distances_point_to_point ( dists2, b, h );
+
+    for ( auto f : dists2 )
+        std::cout << f << ' ';
+    std::cout << nl;
+
+    /*
 
     SnakeSpace<17> ss;
 
@@ -332,7 +419,7 @@ int main ( ) {
 
     // ss.run ( );
 
-    /*
+
     constexpr int in = 128;
 
     FullyConnectedNeuralNetwork<in, 150, 1> nn;
