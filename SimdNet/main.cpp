@@ -49,6 +49,7 @@
 #include <sax/uniform_int_distribution.hpp>
 
 #include "fcc.hpp"
+#include "pop.hpp"
 
 struct Point {
     char x, y;
@@ -158,7 +159,7 @@ struct SnakeSpace {
             print ( );
             std::wcout << nl;
             std::array<float, 24> d{};
-            distances ( d );
+            distances ( d.data ( ) );
             for ( auto f : d )
                 std::wcout << f << L' ';
             std::wcout << nl << nl;
@@ -215,10 +216,10 @@ struct SnakeSpace {
 
     public:
 
-    void distances ( std::array<float, 24> & d_ ) const noexcept {
-        distances_to_wall ( d_.data ( ) + 0 );
-        distances_to_food ( d_.data ( ) + 8 );
-        distances_to_body ( d_.data ( ) + 16 );
+    void distances ( float * d_ ) const noexcept {
+        distances_to_wall ( d_ );
+        distances_to_food ( d_ + 8 );
+        distances_to_body ( d_ + 16 );
     }
 
     void print ( ) const noexcept {
@@ -248,10 +249,21 @@ struct SnakeSpace {
 
 int main ( ) {
 
+    Population<1'000, 24, 48, 4> pop;
+
+    pop.evaluate ( );
+
+    for ( auto f : pop.m_population ) {
+        std::wcout << f << ' ';
+    }
+    std::wcout << nl;
+
+    /*
+
     SnakeSpace<17> ss;
     ss.run ( );
 
-    /*
+
 
     constexpr int in = 128;
 
