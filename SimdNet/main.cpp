@@ -157,25 +157,32 @@ struct SnakeSpace {
         for ( int i = 0; i < 100; ++i ) {
             print ( );
             std::wcout << nl;
+            std::array<float, 24> d{};
+            distances ( d );
+            for ( auto f : d )
+                std::wcout << f << L' ';
+            std::wcout << nl << nl;
             move ( );
         }
     }
 
-    // Manhattan distance activation between points.
+    private:
+
+    // Manhattan distance (activation) between points.
     [[nodiscard]] static std::tuple<int, float> distance_point_to_point ( Point const & p0_, Point const & p1_ ) noexcept {
         Point const s = p0_ - p1_;
         if ( 0 == s.x )
-            return s.y < 0 ? std::tuple<int, float>{ 0, 1.0f / -s.y } : std::tuple<int, float>{ 4, 1.0f / +s.y };
+            return s.y < 0 ? std::tuple<int, float>( 0, 1.0f / -s.y ) : std::tuple<int, float>( 4, 1.0f / +s.y );
         if ( s.x == s.y )
-            return s.x < 0 ? std::tuple<int, float>{ 1, 0.5f / -s.x } : std::tuple<int, float>{ 5, 0.5f / +s.x };
+            return s.y < 0 ? std::tuple<int, float>( 1, 0.5f / -s.y ) : std::tuple<int, float>( 5, 0.5f / +s.y );
         if ( 0 == s.y )
-            return s.x < 0 ? std::tuple<int, float>{ 2, 1.0f / -s.x } : std::tuple<int, float>{ 6, 1.0f / +s.x };
+            return s.x < 0 ? std::tuple<int, float>( 2, 1.0f / -s.x ) : std::tuple<int, float>( 6, 1.0f / +s.x );
         if ( s.x == -s.y )
-            return s.x < 0 ? std::tuple<int, float>{ 3, 0.5f / -s.x } : std::tuple<int, float>{ 7, 0.5f / +s.x };
-        return std::tuple<int, float>{ 0, 0.0f }; // default north, but set to zero, which avoids checking.
+            return s.x < 0 ? std::tuple<int, float>( 3, 0.5f / -s.x ) : std::tuple<int, float>( 7, 0.5f / +s.x );
+        return std::tuple<int, float>( 0, 0.0f ); // default north, but set to zero, which avoids checking.
     }
 
-    // Input (activation) for distance to wall.
+    // Input (activation) for distances to wall.
     void distances_to_wall ( float * dist_ ) const noexcept {
         Point const & head = m_snake_body.front ( );
         dist_[ 0 ]         = 1.0f / ( Base - head.y + 1 );
@@ -188,11 +195,13 @@ struct SnakeSpace {
         dist_[ 7 ]         = 1.0f / ( 2 * std::min ( Base + head.x, Base - head.y ) + 1 );
     }
 
+    // Input (activation) for distances to food.
     void distances_to_food ( float * dist_ ) const noexcept {
         auto const [ dir, val ] = distance_point_to_point ( m_snake_body.front ( ), m_food );
         dist_[ dir ]            = val;
     }
 
+    // Input (activation) for distances to body.
     void distances_to_body ( float * dist_ ) const noexcept {
         Point const & head = m_snake_body.front ( );
         auto const end     = std::end ( m_snake_body );
@@ -203,6 +212,8 @@ struct SnakeSpace {
                 dist_[ dir ] = val;
         }
     }
+
+    public:
 
     void distances ( std::array<float, 24> & d_ ) const noexcept {
         distances_to_wall ( d_.data ( ) + 0 );
@@ -238,21 +249,9 @@ struct SnakeSpace {
 int main ( ) {
 
     SnakeSpace<17> ss;
-
-    ss.print ( );
-
-    std::array<float, 24> d{};
-
-    ss.distances ( d );
-
-    for ( auto f : d )
-        std::cout << f << ' ';
-    std::cout << nl;
+    ss.run ( );
 
     /*
-
-    // ss.run ( );
-
 
     constexpr int in = 128;
 
