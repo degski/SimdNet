@@ -36,6 +36,8 @@
 #include <span>
 #include <vector>
 
+#include <sax/uniform_int_distribution.hpp>
+
 #include "fcc.hpp"
 #include "rng.hpp"
 
@@ -45,7 +47,7 @@ struct Population {
     static constexpr int BreedSize = PopSize / 2;
 
     using Network     = FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>;
-    using SampleTable = std::array<float, BreedSize>;
+    using SampleTable = std::array<int, BreedSize>;
 
     struct Individual {
 
@@ -95,9 +97,13 @@ struct Population {
     [[nodiscard]] static constexpr SampleTable generate_sample_table ( ) noexcept {
         SampleTable table{};
         for ( int n = BreedSize, i = 0, c = n; i < BreedSize; ++i, c += --n )
-            table[ i ] = static_cast<float> ( static_cast<double> ( c ) /
-                                              ( static_cast<double> ( BreedSize ) * static_cast<double> ( BreedSize + 1 ) * 0.5 ) );
+            table[ i ] = c;
         return table;
+    }
+
+    [[nodiscard]] static constexpr int sample ( ) noexcept {
+        int const i = std::uniform_int_distribution<int> ( 0, ( BreedSize * ( BreedSize + 1 ) ) / 2 ) ( Rng::gen ( ) );
+        return static_cast<int> ( std::lower_bound ( std::begin ( m_sample_table ), std::end ( m_sample_table ), i ) - std::begin ( m_sample_table ) );
     }
 
     static constexpr SampleTable const m_sample_table = generate_sample_table ( );

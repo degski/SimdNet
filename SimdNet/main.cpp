@@ -168,19 +168,18 @@ struct SnakeSpace {
     }
 
     private:
-
     // Manhattan distance (activation) between points.
     [[nodiscard]] static std::tuple<int, float> distance_point_to_point ( Point const & p0_, Point const & p1_ ) noexcept {
         Point const s = p0_ - p1_;
         if ( 0 == s.x )
-            return s.y < 0 ? std::tuple<int, float>( 0, 1.0f / -s.y ) : std::tuple<int, float>( 4, 1.0f / +s.y );
+            return s.y < 0 ? std::tuple<int, float> ( 0, 1.0f / -s.y ) : std::tuple<int, float> ( 4, 1.0f / +s.y );
         if ( s.x == s.y )
-            return s.y < 0 ? std::tuple<int, float>( 1, 0.5f / -s.y ) : std::tuple<int, float>( 5, 0.5f / +s.y );
+            return s.y < 0 ? std::tuple<int, float> ( 1, 0.5f / -s.y ) : std::tuple<int, float> ( 5, 0.5f / +s.y );
         if ( 0 == s.y )
-            return s.x < 0 ? std::tuple<int, float>( 2, 1.0f / -s.x ) : std::tuple<int, float>( 6, 1.0f / +s.x );
+            return s.x < 0 ? std::tuple<int, float> ( 2, 1.0f / -s.x ) : std::tuple<int, float> ( 6, 1.0f / +s.x );
         if ( s.x == -s.y )
-            return s.x < 0 ? std::tuple<int, float>( 3, 0.5f / -s.x ) : std::tuple<int, float>( 7, 0.5f / +s.x );
-        return std::tuple<int, float>( 0, 0.0f ); // default north, but set to zero, which avoids checking.
+            return s.x < 0 ? std::tuple<int, float> ( 3, 0.5f / -s.x ) : std::tuple<int, float> ( 7, 0.5f / +s.x );
+        return std::tuple<int, float> ( 0, 0.0f ); // default north, but set to zero, which avoids checking.
     }
 
     // Input (activation) for distances to wall.
@@ -215,7 +214,6 @@ struct SnakeSpace {
     }
 
     public:
-
     void distances ( float * d_ ) const noexcept {
         distances_to_wall ( d_ );
         distances_to_food ( d_ + 8 );
@@ -259,6 +257,10 @@ int main ( ) {
     std::wcout << nl;
 
     pop.reproduce ( );
+
+    for ( int i = 0; i < 1000000; ++i )
+        std::cout << ( pop.sample ( ) > 498 ? "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" : "" ) << nl;
+
 
     /*
 
