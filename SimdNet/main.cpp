@@ -258,6 +258,8 @@ int main ( ) {
     }
     std::wcout << nl;
 
+    pop.reproduce ( );
+
     /*
 
     SnakeSpace<17> ss;

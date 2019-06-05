@@ -29,6 +29,7 @@
 #include <cstdlib>
 
 #include <algorithm>
+#include <execution>
 #include <limits>
 #include <random>
 #include <sax/iostream.hpp>
@@ -43,43 +44,71 @@ struct Population {
 
     using Network = FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>;
 
-    struct FitnessID {
+    static constexpr int BreedSize = PopSize / 2;
+    static constexpr float Q = static_cast<float> ( 2.0 / ( static_cast<double> ( BreedSize ) * static_cast<double> ( BreedSize + 1 ) ) );
+    static constexpr float D =
+        static_cast<float> ( static_cast<double> ( BreedSize ) * static_cast<double> ( BreedSize + 1 ) * 0.5 );
+
+    struct Individual {
 
         float fitness;
         int age = 0;
         Network * id;
 
-        [[nodiscard]] bool operator== ( FitnessID const & rhs_ ) const noexcept { return rhs_.id == id; }
-        [[nodiscard]] bool operator!= ( FitnessID const & rhs_ ) const noexcept { return not operator== ( rhs_ ); }
+        [[nodiscard]] bool operator== ( Individual const & rhs_ ) const noexcept { return rhs_.id == id; }
+        [[nodiscard]] bool operator!= ( Individual const & rhs_ ) const noexcept { return not operator== ( rhs_ ); }
 
         template<typename Stream>
-        [[maybe_unused]] friend Stream & operator<< ( Stream & out_, FitnessID const & f_ ) noexcept {
-            out_ << '<' << f_.id << ' ' << f_.age  << ' ' << f_.fitness << '>';
+        [[maybe_unused]] friend Stream & operator<< ( Stream & out_, Individual const & f_ ) noexcept {
+            out_ << '<' << f_.id << ' ' << f_.age << ' ' << f_.fitness << '>';
             return out_;
         }
     };
 
-    std::vector<FitnessID> m_population{ PopSize };
+    std::vector<Individual> m_population{ PopSize };
 
     Population ( ) {
-        for ( auto & n : m_population )
-            n.id = new Network ( );
+        std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
+                        []( Individual & i ) { i.id = new Network ( ); } );
     }
 
     ~Population ( ) noexcept {
-        for ( auto & n : m_population )
-            delete n.id;
+        std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
+                        []( Individual & i ) { delete i.id; } );
     }
 
     void evaluate ( ) noexcept {
-        for ( auto & n : m_population ) {
-            n.fitness = n.id->run ( );
-            n.age += 1;
-        }
+        std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ), [] ( Individual & i ) {
+            i.fitness = i.id->run ( );
+            i.age += 1;
+        } );
         std::sort ( std::begin ( m_population ), std::end ( m_population ),
-                    []( FitnessID const & a, FitnessID const & b ) { return a.fitness > b.fitness; } );
+                    [] ( Individual const & a, Individual const & b ) { return a.fitness > b.fitness; } );
+    }
+
+    template<int S>
+    [[nodiscard]] static constexpr std::array<float, S> generate_table ( ) noexcept {
+        std::array<float, S> a{};
+        for ( int n = S, i = 0, c = n; i < S; --n, ++i, c += n )
+            a[ i ] = static_cast<float> ( static_cast<double> ( c ) / ( static_cast<double> ( S ) * static_cast<double> ( S + 1 ) * 0.5 ) );
+        return a;
+    }
+
+    void reproduce ( ) noexcept {
+        constexpr auto table = generate_table<5> ( );
+        std::cout << nl;
+        std::cout << nl;
+        for ( auto & f : table )
+            std::cout << f << ' ';
+        std::cout << nl;
     }
 };
+
+
+
+
+
+
 
 template<int NumInput, int NumNeurons, int NumOutput>
 void crossover ( FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput> & p0_,
