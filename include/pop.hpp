@@ -94,6 +94,9 @@ struct Population {
         std::cout << nl;
     }
 
+    // Sample from first BreedSize parents with a linearly decreasing probability.
+    // Iff parent-population size was 3, the probabilities of the CDF would
+    // be 3/6, 5/6, 6/6 ( or 3/6, 2/6, 1/6 for the PDF).
     [[nodiscard]] static int sample ( ) noexcept {
         int const i = sax::uniform_int_distribution<int> ( 0, ( BreedSize * ( BreedSize + 1 ) ) / 2 ) ( Rng::gen ( ) );
         return static_cast<int> ( std::lower_bound ( std::begin ( m_sample_table ), std::end ( m_sample_table ), i ) -
