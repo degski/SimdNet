@@ -100,7 +100,7 @@ struct Population {
         return table;
     }
 
-    static constexpr SampleTable m_sample_table = generate_sample_table ( );
+    static constexpr SampleTable const m_sample_table = generate_sample_table ( );
 };
 
 template<int NumInput, int NumNeurons, int NumOutput>
