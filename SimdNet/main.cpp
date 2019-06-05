@@ -258,10 +258,6 @@ int main ( ) {
 
     pop.reproduce ( );
 
-    for ( int i = 0; i < 1000000; ++i )
-        std::cout << ( pop.sample ( ) > 498 ? "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" : "" ) << nl;
-
-
     /*
 
     SnakeSpace<17> ss;

@@ -74,16 +74,16 @@ struct Population {
 
     ~Population ( ) noexcept {
         std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
-                        [] ( Individual & i ) { delete i.id; } );
+                        [] ( Individual & i ) noexcept { delete i.id; } );
     }
 
     void evaluate ( ) noexcept {
-        std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ), [] ( Individual & i ) {
+        std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ), [] ( Individual & i ) noexcept {
             i.fitness = i.id->run ( );
             i.age += 1;
         } );
         std::sort ( std::begin ( m_population ), std::end ( m_population ),
-                    [] ( Individual const & a, Individual const & b ) { return a.fitness > b.fitness; } );
+                    [] ( Individual const & a, Individual const & b ) noexcept { return a.fitness > b.fitness; } );
     }
 
     void reproduce ( ) noexcept {
@@ -94,16 +94,17 @@ struct Population {
         std::cout << nl;
     }
 
+    [[nodiscard]] static int sample ( ) noexcept {
+        int const i = sax::uniform_int_distribution<int> ( 0, ( BreedSize * ( BreedSize + 1 ) ) / 2 ) ( Rng::gen ( ) );
+        return static_cast<int> ( std::lower_bound ( std::begin ( m_sample_table ), std::end ( m_sample_table ), i ) -
+                                  std::begin ( m_sample_table ) );
+    }
+
     [[nodiscard]] static constexpr SampleTable generate_sample_table ( ) noexcept {
         SampleTable table{};
         for ( int n = BreedSize, i = 0, c = n; i < BreedSize; ++i, c += --n )
             table[ i ] = c;
         return table;
-    }
-
-    [[nodiscard]] static constexpr int sample ( ) noexcept {
-        int const i = std::uniform_int_distribution<int> ( 0, ( BreedSize * ( BreedSize + 1 ) ) / 2 ) ( Rng::gen ( ) );
-        return static_cast<int> ( std::lower_bound ( std::begin ( m_sample_table ), std::end ( m_sample_table ), i ) - std::begin ( m_sample_table ) );
     }
 
     static constexpr SampleTable const m_sample_table = generate_sample_table ( );
