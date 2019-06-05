@@ -46,19 +46,15 @@ struct Population {
     struct FitnessID {
 
         float fitness;
+        int age = 0;
         Network * id;
 
-        [[nodiscard]] bool operator== ( FitnessID const & rhs_ ) const noexcept { return rhs_.fitness == fitness and rhs_.id == id; }
+        [[nodiscard]] bool operator== ( FitnessID const & rhs_ ) const noexcept { return rhs_.id == id; }
         [[nodiscard]] bool operator!= ( FitnessID const & rhs_ ) const noexcept { return not operator== ( rhs_ ); }
-
-        [[nodiscard]] bool operator< ( FitnessID const & rhs_ ) const noexcept { return fitness > rhs_.fitness; }
-        [[nodiscard]] bool operator>= ( FitnessID const & rhs_ ) const noexcept { return not operator< ( rhs_ ); }
-        [[nodiscard]] bool operator> ( FitnessID const & rhs_ ) const noexcept { return fitness < rhs_.fitness; }
-        [[nodiscard]] bool operator<= ( FitnessID const & rhs_ ) const noexcept { return not operator> ( rhs_ ); }
 
         template<typename Stream>
         [[maybe_unused]] friend Stream & operator<< ( Stream & out_, FitnessID const & f_ ) noexcept {
-            out_ << '<' << f_.id << ' ' << f_.fitness << '>';
+            out_ << '<' << f_.id << ' ' << f_.age  << ' ' << f_.fitness << '>';
             return out_;
         }
     };
@@ -76,9 +72,12 @@ struct Population {
     }
 
     void evaluate ( ) noexcept {
-        for ( auto & n : m_population )
+        for ( auto & n : m_population ) {
             n.fitness = n.id->run ( );
-        std::sort ( std::begin ( m_population ), std::end ( m_population ) );
+            n.age += 1;
+        }
+        std::sort ( std::begin ( m_population ), std::end ( m_population ),
+                    []( FitnessID const & a, FitnessID const & b ) { return a.fitness > b.fitness; } );
     }
 };
 
