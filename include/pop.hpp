@@ -42,12 +42,10 @@
 template<int PopSize, int NumInput, int NumNeurons, int NumOutput>
 struct Population {
 
-    using Network = FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>;
-
     static constexpr int BreedSize = PopSize / 2;
-    static constexpr float Q = static_cast<float> ( 2.0 / ( static_cast<double> ( BreedSize ) * static_cast<double> ( BreedSize + 1 ) ) );
-    static constexpr float D =
-        static_cast<float> ( static_cast<double> ( BreedSize ) * static_cast<double> ( BreedSize + 1 ) * 0.5 );
+
+    using Network     = FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>;
+    using SampleTable = std::array<float, BreedSize>;
 
     struct Individual {
 
@@ -69,12 +67,12 @@ struct Population {
 
     Population ( ) {
         std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
-                        []( Individual & i ) { i.id = new Network ( ); } );
+                        [] ( Individual & i ) { i.id = new Network ( ); } );
     }
 
     ~Population ( ) noexcept {
         std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
-                        []( Individual & i ) { delete i.id; } );
+                        [] ( Individual & i ) { delete i.id; } );
     }
 
     void evaluate ( ) noexcept {
@@ -86,29 +84,24 @@ struct Population {
                     [] ( Individual const & a, Individual const & b ) { return a.fitness > b.fitness; } );
     }
 
-    template<int S>
-    [[nodiscard]] static constexpr std::array<float, S> generate_table ( ) noexcept {
-        std::array<float, S> a{};
-        for ( int n = S, i = 0, c = n; i < S; --n, ++i, c += n )
-            a[ i ] = static_cast<float> ( static_cast<double> ( c ) / ( static_cast<double> ( S ) * static_cast<double> ( S + 1 ) * 0.5 ) );
-        return a;
-    }
-
     void reproduce ( ) noexcept {
-        constexpr auto table = generate_table<5> ( );
         std::cout << nl;
         std::cout << nl;
-        for ( auto & f : table )
+        for ( auto & f : m_sample_table )
             std::cout << f << ' ';
         std::cout << nl;
     }
+
+    [[nodiscard]] static constexpr SampleTable generate_sample_table ( ) noexcept {
+        SampleTable table{};
+        for ( int n = BreedSize, i = 0, c = n; i < BreedSize; ++i, c += --n )
+            table[ i ] = static_cast<float> ( static_cast<double> ( c ) /
+                                              ( static_cast<double> ( BreedSize ) * static_cast<double> ( BreedSize + 1 ) * 0.5 ) );
+        return table;
+    }
+
+    static constexpr SampleTable m_sample_table = generate_sample_table ( );
 };
-
-
-
-
-
-
 
 template<int NumInput, int NumNeurons, int NumOutput>
 void crossover ( FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput> & p0_,
