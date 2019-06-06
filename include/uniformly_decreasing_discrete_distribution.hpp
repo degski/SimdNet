@@ -46,8 +46,7 @@ struct uniformly_decreasing_discrete_distribution {
     // be 3/6, 5/6, 6/6 (or 3/6, 2/6, 1/6 for the PDF).
     template<typename Generator>
     result_type operator( ) ( Generator & gen_ ) noexcept {
-        int const i =
-            sax::uniform_int_distribution<int> ( 0, ( Size * ( Size + 1 ) ) / 2 ) ( gen_ ); // needs uniform bits generator.
+        int const i = sax::uniform_int_distribution<int> ( 0, Sum ) ( gen_ ); // needs uniform bits generator.
         return static_cast<result_type> ( std::lower_bound ( std::begin ( m_sample_table ), std::end ( m_sample_table ), i ) -
                                           std::begin ( m_sample_table ) );
     }
@@ -60,12 +59,14 @@ struct uniformly_decreasing_discrete_distribution {
     [[nodiscard]] std::vector<double> probabilities ( ) const {
         std::vector<double> table{ Size, 0.0 };
         for ( T n = Size, i = 0; i < Size; ++i, --n )
-            table[ i ] = static_cast<double> ( n ) / static_cast<double> ( Size * ( Size + 1 ) / 2 );
+            table[ i ] = static_cast<double> ( n ) / static_cast<double> ( Sum );
         return table;
     }
 
     private:
     using SampleTable = std::array<T, Size>;
+
+    static constexpr int Sum = Size % 2 == 0 ? ( ( Size / 2 ) * ( Size + 1 ) ) : ( Size * ( ( Size + 1 ) / 2 ) );
 
     [[nodiscard]] static constexpr SampleTable generate_sample_table ( ) noexcept {
         SampleTable table{};

@@ -80,7 +80,7 @@ template<int B>
     return { idx ( ), idx ( ) };
 }
 
-template<int S>
+template<int S, int NumInput, int NumNeurons, int NumOutput>
 struct SnakeSpace {
 
     static_assert ( S % 2 != 0, "uneven size only" );
@@ -114,36 +114,6 @@ struct SnakeSpace {
 
     SnakeSpace ( ) noexcept { init ( ); }
 
-    [[nodiscard]] Point extend_head ( ) const noexcept {
-        switch ( m_direction ) {
-            case MoveDirection::no: return Point{ +0, +1 } + m_snake_body.front ( );
-            case MoveDirection::ea: return Point{ +1, +0 } + m_snake_body.front ( );
-            case MoveDirection::so: return Point{ +0, -1 } + m_snake_body.front ( );
-            case MoveDirection::we: return Point{ -1, +0 } + m_snake_body.front ( );
-        }
-        return { 0, 0 };
-    }
-
-    void move ( ) noexcept {
-        ++m_move_count;
-        --m_energy;
-        m_snake_body.push_front ( extend_head ( ) );
-        if ( not m_energy or not in_range ( m_snake_body.front ( ) ) ) {
-            std::wcout << L"the grim reaper has collected his reward" << nl;
-            std::exit ( EXIT_SUCCESS );
-        }
-        else if ( m_snake_body.front ( ) != m_food ) {
-            m_snake_body.pop_back ( );
-        }
-        else {
-            m_energy += 50;
-            random_food ( );
-        }
-    }
-
-    void turn_right ( ) noexcept { m_direction = static_cast<MoveDirection> ( ( static_cast<int> ( m_direction ) + 3 ) % 4 ); }
-    void turn_left ( ) noexcept { m_direction = static_cast<MoveDirection> ( ( static_cast<int> ( m_direction ) + 1 ) % 4 ); }
-
     void init ( ) noexcept {
         m_direction  = static_cast<MoveDirection> ( sax::uniform_int_distribution<int>{ 0, 3 }( Rng::gen ( ) ) );
         m_move_count = 0;
@@ -154,16 +124,61 @@ struct SnakeSpace {
         random_food ( );
     }
 
-    void run ( ) noexcept {
-        for ( int i = 0; i < 100; ++i ) {
-            print ( );
-            std::wcout << nl;
-            std::array<float, 24> d{};
-            distances ( d.data ( ) );
-            for ( auto f : d )
-                std::wcout << f << L' ';
-            std::wcout << nl << nl;
-            move ( );
+    [[nodiscard]] Point extend_head ( ) const noexcept {
+        switch ( m_direction ) {
+            case MoveDirection::no: return Point{ +0, +1 } + m_snake_body.front ( );
+            case MoveDirection::ea: return Point{ +1, +0 } + m_snake_body.front ( );
+            case MoveDirection::so: return Point{ +0, -1 } + m_snake_body.front ( );
+            case MoveDirection::we: return Point{ -1, +0 } + m_snake_body.front ( );
+        }
+        return { 0, 0 };
+    }
+
+    using Network  = FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>;
+    using WorkArea = InputBiasOutput<NumInput, NumNeurons, NumOutput>;
+
+    bool move ( ) noexcept {
+        ++m_move_count;
+        --m_energy;
+        m_snake_body.push_front ( extend_head ( ) );
+        if ( not m_energy or not in_range ( m_snake_body.front ( ) ) ) {
+            std::wcout << L"the grim reaper has collected his reward" << nl;
+            return false;
+        }
+        else if ( m_snake_body.front ( ) != m_food ) {
+            m_snake_body.pop_back ( );
+        }
+        else {
+            m_energy += 50;
+            random_food ( );
+        }
+        return true;
+    }
+
+    void turn_right ( ) noexcept { m_direction = static_cast<MoveDirection> ( ( static_cast<int> ( m_direction ) + 3 ) % 4 ); }
+    void turn_left ( ) noexcept { m_direction = static_cast<MoveDirection> ( ( static_cast<int> ( m_direction ) + 1 ) % 4 ); }
+
+    inline void change_to ( MoveDirection d_ ) noexcept {
+        if ( static_cast<MoveDirection> ( ( static_cast<int> ( m_direction ) + 2 ) % 4 ) ) != d_ ) // cannot go back on itself.
+            m_direction = d_;
+    }
+
+    void decide ( std::span<float> const & o_ ) noexcept {
+        int d = 0;
+        float v = o_[ 0 ];
+        for ( int i = 1; i < o_.size ( ); ++i ) {
+            if ( o_[ i ] > v ) {
+                d = i;
+                v = o_[ i ];
+            }
+        }
+        change_to ( static_cast<MoveDirection> ( d_ ) );
+    }
+
+    void run ( Network * n_ ) noexcept {
+        while ( move ( ) ) { // as long as not dead.
+            distances ( m_ibo.data ( ) ); // observe the environment.
+            decide ( n_->feed_forward ( m_ibo.data ( ) ) ); // run the data and decide where to go.
         }
     }
 
@@ -216,6 +231,7 @@ struct SnakeSpace {
     public:
     void distances ( float * d_ ) const noexcept {
         distances_to_wall ( d_ );
+        std::memset ( d_ + 8, 0, 16 * sizeof ( float ) );
         distances_to_food ( d_ + 8 );
         distances_to_body ( d_ + 16 );
     }
@@ -243,11 +259,12 @@ struct SnakeSpace {
     int m_move_count, m_energy;
     SnakeBody m_snake_body{ 1'024 };
     Point m_food;
+    WorkArea m_ibo;
 };
 
 int main ( ) {
 
-    Population<4'096, 24, 48, 4> pop;
+    Population<4096, 24, 48, 4> pop;
 
     pop.evaluate ( );
     pop.reproduce ( );

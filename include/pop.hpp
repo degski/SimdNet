@@ -90,8 +90,8 @@ struct Population {
     }
 
     void mutate ( Network * c_ ) noexcept {
-        int const mup = std::uniform_int_distribution<int> ( 0, Network::NumWeights - 1 ) ( Rng::gen ( ) ); // mutation point.
-        (*c_)[ mup ] = std::normal_distribution<float> ( 0.0f, 1.0f ) ( Rng::gen ( ) );
+        int const mup  = std::uniform_int_distribution<int> ( 0, Network::NumWeights - 1 ) ( Rng::gen ( ) ); // mutation point.
+        ( *c_ )[ mup ] = std::normal_distribution<float> ( 0.0f, 1.0f ) ( Rng::gen ( ) );
     }
 
     void crossover ( std::tuple<Network const &, Network const &> p_, Network * c_ ) noexcept {
@@ -105,11 +105,11 @@ struct Population {
         t.start ( );
         std::for_each ( std::execution::par_unseq, std::begin ( m_population ) + BreedSize,
                         std::end ( m_population ), [this]( Individual & i ) noexcept {
-            crossover ( random_couple ( ), i.id );
-            if ( Rng::bernoulli ( 0.05 ) )
-                mutate ( i.id );
-        } );
-        std::cout << ( std::uint64_t ) t.get_elapsed_us ( ) << " micro-secs" << nl;
+                            crossover ( random_couple ( ), i.id );
+                            if ( Rng::bernoulli ( 0.05 ) )
+                                mutate ( i.id );
+                        } );
+        std::cout << t.get_elapsed_us ( ) / PopSize << " micro-secs / network" << nl;
     }
 
     [[nodiscard]] static int sample ( ) noexcept { return uniformly_decreasing_discrete_distribution<BreedSize>{}( Rng::gen ( ) ); }
@@ -126,26 +126,4 @@ struct Population {
         auto [ p0, p1 ] = sample_match ( );
         return { *m_population[ p0 ].id, *m_population[ p1 ].id };
     }
-}
-;
-
-template<int NumInput, int NumNeurons, int NumOutput>
-void crossover ( FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput> & p0_,
-                 FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput> & p1_ ) noexcept {
-    int const cop = std::uniform_int_distribution<int> (
-        0, FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>::NumWeights - 2 ) ( Rng::gen ( ) ); // crossover point.
-    // Swap the smallest range of the two (separated by the cossover point).
-    if ( cop < FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>::NumWeights / 2 )
-        std::swap_ranges ( p0_.weights ( ), p0_.weights ( ) + cop, p1_.weights ( ) );
-    else
-        std::swap_ranges ( p0_.weights ( ) + cop,
-                           p0_.weights ( ) + FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>::NumWeights,
-                           p1_.weights ( ) + cop );
-}
-
-template<int NumInput, int NumNeurons, int NumOutput>
-void mutate ( FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput> & p_ ) noexcept {
-    int const mup = std::uniform_int_distribution<int> (
-        0, FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>::NumWeights - 1 ) ( Rng::gen ( ) ); // mutation point.
-    p_.weights[ mup ] = std::normal_distribution<float> ( 0.0f, 1.0f ) ( Rng::gen ( ) );
-}
+};
