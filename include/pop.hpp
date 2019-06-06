@@ -42,6 +42,8 @@
 #include "rng.hpp"
 #include "uniformly_decreasing_discrete_distribution.hpp"
 
+#include <plf/plf_nanotimer.h>
+
 template<int PopSize, int NumInput, int NumNeurons, int NumOutput>
 struct Population {
 
@@ -69,29 +71,63 @@ struct Population {
 
     Population ( ) {
         std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
-                        [] ( Individual & i ) { i.id = new Network ( ); } );
+                        []( Individual & i ) { i.id = new Network ( ); } );
     }
 
     ~Population ( ) noexcept {
         std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
-                        [] ( Individual & i ) noexcept { delete i.id; } );
+                        []( Individual & i ) noexcept { delete i.id; } );
     }
 
     void evaluate ( ) noexcept {
-        std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ), [] ( Individual & i ) noexcept {
-            i.fitness = i.id->run ( );
-            i.age += 1;
-        } );
-        std::sort ( std::begin ( m_population ), std::end ( m_population ),
-                    [] ( Individual const & a, Individual const & b ) noexcept { return a.fitness > b.fitness; } );
+        std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
+                        []( Individual & i ) noexcept {
+                            i.fitness = i.id->run ( );
+                            i.age += 1;
+                        } );
+        std::sort ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
+                    []( Individual const & a, Individual const & b ) noexcept { return a.fitness > b.fitness; } );
+    }
+
+    void mutate ( Network * c_ ) noexcept {
+        int const mup = std::uniform_int_distribution<int> ( 0, Network::NumWeights - 1 ) ( Rng::gen ( ) ); // mutation point.
+        (*c_)[ mup ] = std::normal_distribution<float> ( 0.0f, 1.0f ) ( Rng::gen ( ) );
+    }
+
+    void crossover ( std::tuple<Network const &, Network const &> p_, Network * c_ ) noexcept {
+        int const cop = std::uniform_int_distribution<int> ( 0, Network::NumWeights - 2 ) ( Rng::gen ( ) ); // crossover point.
+        std::copy ( std::begin ( std::get<0> ( p_ ) ), std::begin ( std::get<0> ( p_ ) ) + cop, std::begin ( *c_ ) );
+        std::copy ( std::begin ( std::get<1> ( p_ ) ) + cop, std::end ( std::get<1> ( p_ ) ), std::begin ( *c_ ) + cop );
     }
 
     void reproduce ( ) noexcept {
-
+        plf::nanotimer t;
+        t.start ( );
+        std::for_each ( std::execution::par_unseq, std::begin ( m_population ) + BreedSize,
+                        std::end ( m_population ), [this]( Individual & i ) noexcept {
+            crossover ( random_couple ( ), i.id );
+            if ( Rng::bernoulli ( 0.05 ) )
+                mutate ( i.id );
+        } );
+        std::cout << ( std::uint64_t ) t.get_elapsed_us ( ) << " micro-secs" << nl;
     }
 
     [[nodiscard]] static int sample ( ) noexcept { return uniformly_decreasing_discrete_distribution<BreedSize>{}( Rng::gen ( ) ); }
-};
+    [[nodiscard]] static std::tuple<int, int> sample_match ( ) noexcept {
+        auto g                 = []( ) { return uniformly_decreasing_discrete_distribution<BreedSize>{}( Rng::gen ( ) ); };
+        std::tuple<int, int> r = { g ( ), g ( ) };
+        while ( std::get<0> ( r ) == std::get<1> ( r ) )
+            std::get<1> ( r ) = g ( );
+        return r;
+    }
+
+    [[nodiscard]] Network const & random_parent ( ) const noexcept { return *m_population[ sample ( ) ].id; }
+    [[nodiscard]] std::tuple<Network const &, Network const &> random_couple ( ) const noexcept {
+        auto [ p0, p1 ] = sample_match ( );
+        return { *m_population[ p0 ].id, *m_population[ p1 ].id };
+    }
+}
+;
 
 template<int NumInput, int NumNeurons, int NumOutput>
 void crossover ( FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput> & p0_,

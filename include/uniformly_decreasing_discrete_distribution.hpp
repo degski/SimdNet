@@ -30,9 +30,6 @@
 
 #include <algorithm>
 #include <array>
-#include <limits>
-#include <random>
-#include <sax/iostream.hpp>
 #include <vector>
 
 #include <sax/uniform_int_distribution.hpp>
@@ -44,8 +41,8 @@ struct uniformly_decreasing_discrete_distribution {
 
     using result_type = T;
 
-    // Sample from first Size parents with a linearly decreasing probability.
-    // Iff parent-population size was 3, the probabilities of the CDF would
+    // Sample with a linearly decreasing probability.
+    // Iff size was 3, the probabilities of the CDF would
     // be 3/6, 5/6, 6/6 (or 3/6, 2/6, 1/6 for the PDF).
     template<typename Generator>
     result_type operator( ) ( Generator & gen_ ) noexcept {

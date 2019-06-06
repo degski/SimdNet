@@ -37,7 +37,6 @@
 #include <sax/iostream.hpp>
 #include <span>
 
-
 #include "rng.hpp"
 
 // Space to be used for feed-forward-calculation.
@@ -89,13 +88,15 @@ struct FullyConnectedNeuralNetwork {
     using ibo_type = InputBiasOutput<NumInput, NumNeurons, NumOutput>;
     using wgt_type = std::array<float, NumWeights>;
 
+    using pointer        = typename wgt_type::pointer;
+    using const_pointer  = typename wgt_type::const_pointer;
+    using iterator       = typename wgt_type::iterator;
+    using const_iterator = typename wgt_type::const_iterator;
+
     FullyConnectedNeuralNetwork ( ) noexcept {
         std::generate ( std::begin ( m_weights ), std::end ( m_weights ),
                         [] ( ) { return std::uniform_real_distribution<float> ( -1.0f, 1.0f ) ( Rng::gen ( ) ); } );
     }
-
-    [[nodiscard]] constexpr float * weights ( ) noexcept { return m_weights.data ( ); }
-    [[nodiscard]] constexpr float const * weights ( ) const noexcept { return m_weights.data ( ); }
 
     [[nodiscard]] std::span<float> feed_forward ( float * const ibo_ ) const noexcept {
         float const * wgt = m_weights.data ( );
@@ -121,7 +122,22 @@ struct FullyConnectedNeuralNetwork {
         return out_;
     }
 
-    [[ nodiscard ]] float run ( ) const noexcept { return std::uniform_real_distribution<float> ( 0.0f, 10'000.0f ) ( Rng::gen ( ) ); }
+    [[nodiscard]] float run ( ) const noexcept {
+        return std::uniform_real_distribution<float> ( 0.0f, 10'000.0f ) ( Rng::gen ( ) );
+    }
+
+    [[nodiscard]] float & operator[] ( int i_ ) noexcept { return m_weights[ i_ ]; }
+    [[nodiscard]] float const & operator[] ( int i_ ) const noexcept { return m_weights[ i_ ]; }
+
+    [[nodiscard]] constexpr pointer data ( ) noexcept { return m_weights.data ( ); }
+    [[nodiscard]] constexpr const_pointer * data ( ) const noexcept { return m_weights.data ( ); }
+
+    [[nodiscard]] iterator begin ( ) noexcept { return iterator ( m_weights.begin ( ) ); }
+    [[nodiscard]] iterator end ( ) noexcept { return iterator ( m_weights.end ( ) ); }
+    [[nodiscard]] const_iterator begin ( ) const noexcept { return const_iterator ( m_weights.begin ( ) ); }
+    [[nodiscard]] const_iterator cbegin ( ) const noexcept { return const_iterator ( m_weights.cbegin ( ) ); }
+    [[nodiscard]] const_iterator end ( ) const noexcept { return const_iterator ( m_weights.end ( ) ); }
+    [[nodiscard]] const_iterator cend ( ) const noexcept { return const_iterator ( m_weights.cend ( ) ); }
 
     private:
     wgt_type m_weights;
@@ -137,7 +153,8 @@ void crossover ( FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput> & 
     if ( cop < FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>::NumWeights / 2 )
         std::swap_ranges ( p0_.weights ( ), p0_.weights ( ) + cop, p1_.weights ( ) );
     else
-        std::swap_ranges ( p0_.weights ( ) + cop, p0_.weights ( ) + FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>::NumWeights, p1_.weights ( ) + cop );
+        std::swap_ranges ( p0_.weights ( ) + cop, p0_.weights ( ) + FullyConnectedNeuralNetwork<NumInput, NumNeurons,
+NumOutput>::NumWeights, p1_.weights ( ) + cop );
 }
 
 template<int NumInput, int NumNeurons, int NumOutput>

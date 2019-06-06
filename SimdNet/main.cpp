@@ -247,15 +247,9 @@ struct SnakeSpace {
 
 int main ( ) {
 
-    Population<1'000, 24, 48, 4> pop;
+    Population<4'096, 24, 48, 4> pop;
 
     pop.evaluate ( );
-
-    for ( auto f : pop.m_population ) {
-        std::wcout << f << ' ';
-    }
-    std::wcout << nl;
-
     pop.reproduce ( );
 
     /*
