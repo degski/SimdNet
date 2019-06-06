@@ -109,7 +109,7 @@ struct Population {
                             if ( Rng::bernoulli ( 0.05 ) )
                                 mutate ( i.id );
                         } );
-        std::cout << t.get_elapsed_us ( ) / PopSize << " micro-secs / network" << nl;
+        std::cout << t.get_elapsed_us ( ) / PopSize << " microseconds per network" << nl;
     }
 
     [[nodiscard]] static int sample ( ) noexcept { return uniformly_decreasing_discrete_distribution<BreedSize>{}( Rng::gen ( ) ); }

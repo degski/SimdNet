@@ -35,7 +35,6 @@
 #include <limits>
 #include <random>
 #include <sax/iostream.hpp>
-#include <span>
 
 #include "rng.hpp"
 
@@ -98,11 +97,11 @@ struct FullyConnectedNeuralNetwork {
                         [] ( ) { return std::uniform_real_distribution<float> ( -1.0f, 1.0f ) ( Rng::gen ( ) ); } );
     }
 
-    [[nodiscard]] std::span<float> feed_forward ( float * const ibo_ ) const noexcept {
-        float const * wgt = m_weights.data ( );
+    [[nodiscard]] const_pointer feed_forward ( float * const ibo_ ) const noexcept {
+        const_pointer wgt = m_weights.data ( );
         for ( int i = NumIns; i < NumInsOuts; wgt += i++ )
             ibo_[ i ] = activation_elliotsig ( cblas_sdot ( i, ibo_, 1, wgt, 1 ), 1.0f );
-        return { ibo_ + NumInsOuts - NumOutput, NumOutput };
+        return ibo_ + NumInsOuts - NumOutput;
     }
 
     [[nodiscard]] inline float activation_bipolar ( float net_, float const alpha_ ) const noexcept {

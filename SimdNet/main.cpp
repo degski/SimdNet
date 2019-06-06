@@ -26,6 +26,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
 
 #include <algorithm>
 #include <array>
@@ -76,7 +77,7 @@ struct Point {
 
 template<int B>
 [[nodiscard]] Point random_point ( ) noexcept {
-    auto idx = []( ) { return static_cast<char> ( sax::uniform_int_distribution<int>{ -B, B }( Rng::gen ( ) ) ); };
+    auto idx = [] ( ) { return static_cast<char> ( sax::uniform_int_distribution<int>{ -B, B }( Rng::gen ( ) ) ); };
     return { idx ( ), idx ( ) };
 }
 
@@ -88,10 +89,14 @@ struct SnakeSpace {
     static constexpr int Base = S / 2;
     static constexpr int Size = S;
 
-    enum class ScanDirection : int { no, ne, ea, se, so, sw, we, nw };
     enum class MoveDirection : int { no, ea, so, we };
 
     using SnakeBody = boost::circular_buffer<Point>;
+
+    using pointer         = float *;
+    using const_pointer   = float const *;
+    using reference       = float &;
+    using const_reference = float const &;
 
     [[nodiscard]] inline bool in_range ( Point const & p_ ) const noexcept {
         return p_.x >= -Base and p_.y >= -Base and p_.x <= Base and p_.y <= Base;
@@ -157,23 +162,22 @@ struct SnakeSpace {
     void turn_right ( ) noexcept { m_direction = static_cast<MoveDirection> ( ( static_cast<int> ( m_direction ) + 3 ) % 4 ); }
     void turn_left ( ) noexcept { m_direction = static_cast<MoveDirection> ( ( static_cast<int> ( m_direction ) + 1 ) % 4 ); }
 
-    [[nodiscard]] inline int decide_direction ( std::span<float> const & o_ ) noexcept {
-        return o_[ 1 ] > o_[ 0 ]
-            ? ( o_[ 3 ] > o_[ 2 ] ? ( o_[ 3 ] > o_[ 1 ] ? 3 : 1 ) : ( o_[ 2 ] > o_[ 1 ] ? 2 : 1 ) )
-            : ( o_[ 3 ] > o_[ 2 ] ? ( o_[ 3 ] > o_[ 0 ] ? 3 : 0 ) : ( o_[ 2 ] > o_[ 0 ] ? 2 : 0 ) );
+    [[nodiscard]] inline int decide_direction ( const_pointer o_ ) noexcept {
+        return o_[ 1 ] > o_[ 0 ] ? ( o_[ 3 ] > o_[ 2 ] ? ( o_[ 3 ] > o_[ 1 ] ? 3 : 1 ) : ( o_[ 2 ] > o_[ 1 ] ? 2 : 1 ) )
+                                 : ( o_[ 3 ] > o_[ 2 ] ? ( o_[ 3 ] > o_[ 0 ] ? 3 : 0 ) : ( o_[ 2 ] > o_[ 0 ] ? 2 : 0 ) );
     }
 
     void change_direction ( int d_ ) noexcept {
-        if ( ( static_cast<int> ( m_direction ) + 2 ) % 4 != d_ ) // cannot go back on itself.
+        if ( ( static_cast<int> ( m_direction ) + 2 ) % 4 != d_ ) // Cannot turn back on itself, new direction ignored.
             m_direction = static_cast<MoveDirection> ( d_ );
     }
 
     // Return the fitness of the network.
     [[nodiscard]] float run ( Network * n_ ) noexcept {
         init ( );
-        while ( move ( ) ) { // as long as not dead.
-            distances ( m_ibo.data ( ) ); // observe the environment.
-            change_direction ( decide_direction ( n_->feed_forward ( m_ibo.data ( ) ) ) ); // run the data and decide where to go.
+        while ( move ( ) ) {                                                               // As long as not dead.
+            distances ( m_ibo.data ( ) );                                                  // Observe the environment.
+            change_direction ( decide_direction ( n_->feed_forward ( m_ibo.data ( ) ) ) ); // Run the data and decide where to go.
         }
         return m_move_count;
     }
@@ -190,11 +194,11 @@ struct SnakeSpace {
             return s.x < 0 ? std::tuple<int, float> ( 2, 1.0f / -s.x ) : std::tuple<int, float> ( 6, 1.0f / +s.x );
         if ( s.x == -s.y )
             return s.x < 0 ? std::tuple<int, float> ( 3, 0.5f / -s.x ) : std::tuple<int, float> ( 7, 0.5f / +s.x );
-        return std::tuple<int, float> ( 0, 0.0f ); // default north, but set to zero, which avoids checking.
+        return std::tuple<int, float> ( 0, 0.0f ); // Default is north, but set to zero, which avoids any checking.
     }
 
     // Input (activation) for distances to wall.
-    void distances_to_wall ( float * dist_ ) const noexcept {
+    void distances_to_wall ( pointer dist_ ) const noexcept {
         Point const & head = m_snake_body.front ( );
         dist_[ 0 ]         = 1.0f / ( Base - head.y + 1 );
         dist_[ 1 ]         = 1.0f / ( 2 * std::min ( Base - head.x, Base - head.y ) + 1 );
@@ -207,25 +211,25 @@ struct SnakeSpace {
     }
 
     // Input (activation) for distances to food.
-    void distances_to_food ( float * dist_ ) const noexcept {
-        auto const [ dir, val ] = distance_point_to_point ( m_snake_body.front ( ), m_food );
+    void distances_to_food ( pointer dist_ ) const noexcept {
+        auto [ dir, val ] = distance_point_to_point ( m_snake_body.front ( ), m_food );
         dist_[ dir ]            = val;
     }
 
     // Input (activation) for distances to body.
-    void distances_to_body ( float * dist_ ) const noexcept {
+    void distances_to_body ( pointer dist_ ) const noexcept {
         Point const & head = m_snake_body.front ( );
         auto const end     = std::end ( m_snake_body );
         auto it            = std::begin ( m_snake_body ); // This assumes the length of the snake is at least 2.
         while ( ++it != end ) {
-            auto const [ dir, val ] = distance_point_to_point ( head, *it );
+            auto [ dir, val ] = distance_point_to_point ( head, *it );
             if ( val > dist_[ dir ] )
                 dist_[ dir ] = val;
         }
     }
 
     public:
-    void distances ( float * d_ ) const noexcept {
+    void distances ( pointer d_ ) const noexcept {
         distances_to_wall ( d_ );
         std::memset ( d_ + 8, 0, 16 * sizeof ( float ) );
         distances_to_food ( d_ + 8 );
@@ -238,12 +242,11 @@ struct SnakeSpace {
                 Point const p{ static_cast<char> ( x ), static_cast<char> ( y ) };
                 if ( p == m_food )
                     std::wcout << L" o ";
-                else if ( snake_body_contains ( p ) ) {
+                else if ( snake_body_contains ( p ) )
                     if ( p == m_snake_body.front ( ) )
                         std::wcout << L" x ";
                     else
                         std::wcout << L" s ";
-                }
                 else
                     std::wcout << L" . ";
             }
