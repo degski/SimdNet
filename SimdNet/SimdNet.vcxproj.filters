@@ -29,5 +29,8 @@
     <ClInclude Include="..\include\pop.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\uniformly_decreasing_discrete_distribution.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

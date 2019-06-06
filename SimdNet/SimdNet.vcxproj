@@ -225,6 +225,7 @@
     <ClInclude Include="..\include\fcc.hpp" />
     <ClInclude Include="..\include\pop.hpp" />
     <ClInclude Include="..\include\rng.hpp" />
+    <ClInclude Include="..\include\uniformly_decreasing_discrete_distribution.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

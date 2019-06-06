@@ -40,14 +40,14 @@
 
 #include "fcc.hpp"
 #include "rng.hpp"
+#include "uniformly_decreasing_discrete_distribution.hpp"
 
 template<int PopSize, int NumInput, int NumNeurons, int NumOutput>
 struct Population {
 
     static constexpr int BreedSize = PopSize / 2;
 
-    using Network     = FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>;
-    using SampleTable = std::array<int, BreedSize>;
+    using Network = FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>;
 
     struct Individual {
 
@@ -87,30 +87,10 @@ struct Population {
     }
 
     void reproduce ( ) noexcept {
-        std::cout << nl;
-        std::cout << nl;
-        for ( auto & f : m_sample_table )
-            std::cout << f << ' ';
-        std::cout << nl;
+
     }
 
-    // Sample from first BreedSize parents with a linearly decreasing probability.
-    // Iff parent-population size was 3, the probabilities of the CDF would
-    // be 3/6, 5/6, 6/6 ( or 3/6, 2/6, 1/6 for the PDF).
-    [[nodiscard]] static int sample ( ) noexcept {
-        int const i = sax::uniform_int_distribution<int> ( 0, ( BreedSize * ( BreedSize + 1 ) ) / 2 ) ( Rng::gen ( ) );
-        return static_cast<int> ( std::lower_bound ( std::begin ( m_sample_table ), std::end ( m_sample_table ), i ) -
-                                  std::begin ( m_sample_table ) );
-    }
-
-    [[nodiscard]] static constexpr SampleTable generate_sample_table ( ) noexcept {
-        SampleTable table{};
-        for ( int n = BreedSize, i = 0, c = n; i < BreedSize; ++i, c += --n )
-            table[ i ] = c;
-        return table;
-    }
-
-    static constexpr SampleTable const m_sample_table = generate_sample_table ( );
+    [[nodiscard]] static int sample ( ) noexcept { return uniformly_decreasing_discrete_distribution<BreedSize>{}( Rng::gen ( ) ); }
 };
 
 template<int NumInput, int NumNeurons, int NumOutput>
