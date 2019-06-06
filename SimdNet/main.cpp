@@ -112,12 +112,11 @@ struct SnakeSpace {
         m_food = f;
     }
 
-    SnakeSpace ( ) noexcept { init ( ); }
-
     void init ( ) noexcept {
         m_direction  = static_cast<MoveDirection> ( sax::uniform_int_distribution<int>{ 0, 3 }( Rng::gen ( ) ) );
         m_move_count = 0;
         m_energy     = 100;
+        m_snake_body.clear ( );
         m_snake_body.push_front ( random_point<Base - 6> ( ) ); // the new tail.
         m_snake_body.push_front ( extend_head ( ) );
         m_snake_body.push_front ( extend_head ( ) ); // the new head.
@@ -158,28 +157,25 @@ struct SnakeSpace {
     void turn_right ( ) noexcept { m_direction = static_cast<MoveDirection> ( ( static_cast<int> ( m_direction ) + 3 ) % 4 ); }
     void turn_left ( ) noexcept { m_direction = static_cast<MoveDirection> ( ( static_cast<int> ( m_direction ) + 1 ) % 4 ); }
 
-    inline void change_to ( MoveDirection d_ ) noexcept {
-        if ( static_cast<MoveDirection> ( ( static_cast<int> ( m_direction ) + 2 ) % 4 ) ) != d_ ) // cannot go back on itself.
-            m_direction = d_;
+    [[nodiscard]] inline int decide_direction ( std::span<float> const & o_ ) noexcept {
+        return o_[ 1 ] > o_[ 0 ]
+            ? ( o_[ 3 ] > o_[ 2 ] ? ( o_[ 3 ] > o_[ 1 ] ? 3 : 1 ) : ( o_[ 2 ] > o_[ 1 ] ? 2 : 1 ) )
+            : ( o_[ 3 ] > o_[ 2 ] ? ( o_[ 3 ] > o_[ 0 ] ? 3 : 0 ) : ( o_[ 2 ] > o_[ 0 ] ? 2 : 0 ) );
     }
 
-    void decide ( std::span<float> const & o_ ) noexcept {
-        int d = 0;
-        float v = o_[ 0 ];
-        for ( int i = 1; i < o_.size ( ); ++i ) {
-            if ( o_[ i ] > v ) {
-                d = i;
-                v = o_[ i ];
-            }
-        }
-        change_to ( static_cast<MoveDirection> ( d_ ) );
+    void change_direction ( int d_ ) noexcept {
+        if ( ( static_cast<int> ( m_direction ) + 2 ) % 4 != d_ ) // cannot go back on itself.
+            m_direction = static_cast<MoveDirection> ( d_ );
     }
 
-    void run ( Network * n_ ) noexcept {
+    // Return the fitness of the network.
+    [[nodiscard]] float run ( Network * n_ ) noexcept {
+        init ( );
         while ( move ( ) ) { // as long as not dead.
             distances ( m_ibo.data ( ) ); // observe the environment.
-            decide ( n_->feed_forward ( m_ibo.data ( ) ) ); // run the data and decide where to go.
+            change_direction ( decide_direction ( n_->feed_forward ( m_ibo.data ( ) ) ) ); // run the data and decide where to go.
         }
+        return m_move_count;
     }
 
     private:
