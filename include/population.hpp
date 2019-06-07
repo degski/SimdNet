@@ -38,9 +38,9 @@
 
 #include <sax/uniform_int_distribution.hpp>
 
-#include "fcc.hpp"
 #include "rng.hpp"
 #include "uniformly_decreasing_discrete_distribution.hpp"
+#include "fcc.hpp"
 
 #include <plf/plf_nanotimer.h>
 
@@ -49,13 +49,13 @@ struct Population {
 
     static constexpr int BreedSize = PopSize / 2;
 
-    using Network = FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>;
+    using TheBrain = FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>;
 
     struct Individual {
 
         float fitness;
         int age = 0;
-        Network * id;
+        TheBrain * id;
 
         [[nodiscard]] bool operator== ( Individual const & rhs_ ) const noexcept { return rhs_.id == id; }
         [[nodiscard]] bool operator!= ( Individual const & rhs_ ) const noexcept { return not operator== ( rhs_ ); }
@@ -67,11 +67,9 @@ struct Population {
         }
     };
 
-    std::vector<Individual> m_population{ PopSize };
-
     Population ( ) {
         std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
-                        []( Individual & i ) { i.id = new Network ( ); } );
+                        []( Individual & i ) { i.id = new TheBrain ( ); } );
     }
 
     ~Population ( ) noexcept {
@@ -89,13 +87,13 @@ struct Population {
                     []( Individual const & a, Individual const & b ) noexcept { return a.fitness > b.fitness; } );
     }
 
-    void mutate ( Network * c_ ) noexcept {
-        int const mup  = std::uniform_int_distribution<int> ( 0, Network::NumWeights - 1 ) ( Rng::gen ( ) ); // mutation point.
+    void mutate ( TheBrain * const c_ ) noexcept {
+        int const mup  = std::uniform_int_distribution<int> ( 0, TheBrain::NumWeights - 1 ) ( Rng::gen ( ) ); // mutation point.
         ( *c_ )[ mup ] = std::normal_distribution<float> ( 0.0f, 1.0f ) ( Rng::gen ( ) );
     }
 
-    void crossover ( std::tuple<Network const &, Network const &> p_, Network * c_ ) noexcept {
-        int const cop = std::uniform_int_distribution<int> ( 0, Network::NumWeights - 2 ) ( Rng::gen ( ) ); // crossover point.
+    void crossover ( std::tuple<TheBrain const &, TheBrain const &> p_, TheBrain * const c_ ) noexcept {
+        int const cop = std::uniform_int_distribution<int> ( 0, TheBrain::NumWeights - 2 ) ( Rng::gen ( ) ); // crossover point.
         std::copy ( std::begin ( std::get<0> ( p_ ) ), std::begin ( std::get<0> ( p_ ) ) + cop, std::begin ( *c_ ) );
         std::copy ( std::begin ( std::get<1> ( p_ ) ) + cop, std::end ( std::get<1> ( p_ ) ), std::begin ( *c_ ) + cop );
     }
@@ -114,16 +112,19 @@ struct Population {
 
     [[nodiscard]] static int sample ( ) noexcept { return uniformly_decreasing_discrete_distribution<BreedSize>{}( Rng::gen ( ) ); }
     [[nodiscard]] static std::tuple<int, int> sample_match ( ) noexcept {
-        auto g                 = []( ) { return uniformly_decreasing_discrete_distribution<BreedSize>{}( Rng::gen ( ) ); };
+        auto g                 = []( ) noexcept { return uniformly_decreasing_discrete_distribution<BreedSize>{}( Rng::gen ( ) ); };
         std::tuple<int, int> r = { g ( ), g ( ) };
         while ( std::get<0> ( r ) == std::get<1> ( r ) )
             std::get<1> ( r ) = g ( );
         return r;
     }
 
-    [[nodiscard]] Network const & random_parent ( ) const noexcept { return *m_population[ sample ( ) ].id; }
-    [[nodiscard]] std::tuple<Network const &, Network const &> random_couple ( ) const noexcept {
+    [[nodiscard]] TheBrain const & random_parent ( ) const noexcept { return *m_population[ sample ( ) ].id; }
+    [[nodiscard]] std::tuple<TheBrain const &, TheBrain const &> random_couple ( ) const noexcept {
         auto [ p0, p1 ] = sample_match ( );
         return { *m_population[ p0 ].id, *m_population[ p1 ].id };
     }
+
+    private:
+    std::vector<Individual> m_population{ PopSize };
 };

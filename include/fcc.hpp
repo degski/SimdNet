@@ -97,7 +97,7 @@ struct FullyConnectedNeuralNetwork {
                         [] ( ) { return std::uniform_real_distribution<float> ( -1.0f, 1.0f ) ( Rng::gen ( ) ); } );
     }
 
-    [[nodiscard]] const_pointer feed_forward ( float * const ibo_ ) const noexcept {
+    [[nodiscard]] const_pointer feed_forward ( pointer const ibo_ ) const noexcept {
         const_pointer wgt = m_weights.data ( );
         for ( int i = NumIns; i < NumInsOuts; wgt += i++ )
             ibo_[ i ] = activation_elliotsig ( cblas_sdot ( i, ibo_, 1, wgt, 1 ), 1.0f );
@@ -141,25 +141,3 @@ struct FullyConnectedNeuralNetwork {
     private:
     wgt_type m_weights;
 };
-
-/*
-template<int NumInput, int NumNeurons, int NumOutput>
-void crossover ( FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput> & p0_,
-                 FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput> & p1_ ) noexcept {
-    int const cop = std::uniform_int_distribution<int> (
-        0, FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>::NumWeights - 2 ) ( Rng::gen ( ) ); // crossover point.
-    // Swap the smallest range of the two (separated by the cossover point).
-    if ( cop < FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>::NumWeights / 2 )
-        std::swap_ranges ( p0_.weights ( ), p0_.weights ( ) + cop, p1_.weights ( ) );
-    else
-        std::swap_ranges ( p0_.weights ( ) + cop, p0_.weights ( ) + FullyConnectedNeuralNetwork<NumInput, NumNeurons,
-NumOutput>::NumWeights, p1_.weights ( ) + cop );
-}
-
-template<int NumInput, int NumNeurons, int NumOutput>
-void mutate ( FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput> & p_ ) noexcept {
-    int const mup = std::uniform_int_distribution<int> (
-        0, FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>::NumWeights - 1 ) ( Rng::gen ( ) ); // mutation point.
-    p_.weights[ mup ] = std::normal_distribution<float> ( 0.0f, 1.0f ) ( Rng::gen ( ) );
-}
-*/

@@ -26,10 +26,13 @@
     <ClInclude Include="..\include\fcc.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\pop.hpp">
+    <ClInclude Include="..\include\uniformly_decreasing_discrete_distribution.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\uniformly_decreasing_discrete_distribution.hpp">
+    <ClInclude Include="..\include\snake.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\population.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
