@@ -134,9 +134,9 @@ struct Population {
 
     [[nodiscard]] float average_fitness ( ) const noexcept {
         float avg = 0.0f;
-        for ( auto const & i : m_population )
-            avg += i.fitness;
-        return avg / PopSize;
+        std::for_each ( std::begin ( m_population ),
+                        std::begin ( m_population ) + BreedSize, [ & avg ]( Individual const & i ) noexcept { avg += i.fitness; } );
+        return avg / BreedSize;
     }
 
     void run ( ) noexcept {
