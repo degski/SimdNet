@@ -41,9 +41,8 @@
 
 #include <sax/uniform_int_distribution.hpp>
 
-#include "rng.hpp"
 #include "fcc.hpp"
-#include "population.hpp"
+#include "rng.hpp"
 
 struct Point {
     char x, y;
@@ -74,13 +73,12 @@ template<int B>
     return { idx ( ), idx ( ) };
 }
 
-template<int S, int NumInput, int NumNeurons, int NumOutput>
+template<int FieldSize, int NumInput, int NumNeurons, int NumOutput>
 struct SnakeSpace {
 
-    static_assert ( S % 2 != 0, "uneven size only" );
+    static_assert ( FieldSize % 2 != 0, "uneven size only" );
 
-    static constexpr int Base = S / 2;
-    static constexpr int Size = S;
+    static constexpr int FieldRadius = FieldSize / 2;
 
     enum class MoveDirection : int { no, ea, so, we };
 
@@ -92,10 +90,9 @@ struct SnakeSpace {
     using const_reference = float const &;
 
     using TheBrain = FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>;
-    using WorkArea = InputBiasOutput<NumInput, NumNeurons, NumOutput>;
 
     [[nodiscard]] inline bool in_range ( Point const & p_ ) const noexcept {
-        return p_.x >= -Base and p_.y >= -Base and p_.x <= Base and p_.y <= Base;
+        return p_.x >= -FieldRadius and p_.y >= -FieldRadius and p_.x <= FieldRadius and p_.y <= FieldRadius;
     }
 
     [[nodiscard]] inline bool snake_body_contains ( Point const & p_ ) const noexcept {
@@ -107,18 +104,18 @@ struct SnakeSpace {
     }
 
     void random_food ( ) noexcept {
-        Point f = random_point<Base> ( );
+        Point f = random_point<FieldRadius> ( );
         while ( snake_body_contains ( f ) )
-            f = random_point<Base> ( );
+            f = random_point<FieldRadius> ( );
         m_food = f;
     }
 
     void init_run ( ) noexcept {
-        m_direction  = static_cast<MoveDirection> ( sax::uniform_int_distribution<int>{ 0, 3 }( Rng::gen ( ) ) );
         m_move_count = 0;
-        m_energy     = 100;
+        m_energy     = 1'000;
+        m_direction  = static_cast<MoveDirection> ( sax::uniform_int_distribution<int>{ 0, 3 }( Rng::gen ( ) ) );
         m_snake_body.clear ( );
-        m_snake_body.push_front ( random_point<Base - 6> ( ) ); // the new tail.
+        m_snake_body.push_front ( random_point<FieldRadius - 6> ( ) ); // the new tail.
         m_snake_body.push_front ( extend_head ( ) );
         m_snake_body.push_front ( extend_head ( ) ); // the new head.
         random_food ( );
@@ -140,7 +137,6 @@ struct SnakeSpace {
         --m_energy;
         m_snake_body.push_front ( extend_head ( ) );
         if ( not m_energy or not in_range ( m_snake_body.front ( ) ) ) {
-            std::wcout << L"the grim reaper has collected his reward" << nl;
             return false;
         }
         else if ( m_snake_body.front ( ) != m_food ) {
@@ -164,13 +160,14 @@ struct SnakeSpace {
     }
 
     // Return the fitness of the network.
-    [[nodiscard]] float run ( TheBrain * const n_ ) noexcept {
+    [[nodiscard]] float run ( TheBrain * const brain_, float * const work_space_ ) noexcept {
         init_run ( );
-        while ( move ( ) ) {                                                               // As long as not dead.
-            distances ( m_ibo.data ( ) );                                                  // Observe the environment.
-            change_direction ( decide_direction ( n_->feed_forward ( m_ibo.data ( ) ) ) ); // Run the data and decide where to go.
+        while ( move ( ) ) {                                                                // As long as not dead.
+            distances ( work_space_ );                                                      // Observe the environment.
+            change_direction ( decide_direction ( brain_->feed_forward ( work_space_ ) ) ); // Run the data and decide where to go.
         }
-        return m_move_count;
+        // std::wcout << L"moves " << m_move_count << nl;
+        return static_cast<float> ( m_move_count > 500 ? 0 : m_move_count );
     }
 
     private:
@@ -191,20 +188,20 @@ struct SnakeSpace {
     // Input (activation) for distances to wall.
     void distances_to_wall ( pointer dist_ ) const noexcept {
         Point const & head = m_snake_body.front ( );
-        dist_[ 0 ]         = 1.0f / ( Base - head.y + 1 );
-        dist_[ 1 ]         = 1.0f / ( 2 * std::min ( Base - head.x, Base - head.y ) + 1 );
-        dist_[ 2 ]         = 1.0f / ( Base - head.x + 1 );
-        dist_[ 3 ]         = 1.0f / ( 2 * std::min ( Base - head.x, Base + head.y ) + 1 );
-        dist_[ 4 ]         = 1.0f / ( Base + head.y + 1 );
-        dist_[ 5 ]         = 1.0f / ( 2 * std::min ( Base + head.x, Base + head.y ) + 1 );
-        dist_[ 6 ]         = 1.0f / ( Base + head.x + 1 );
-        dist_[ 7 ]         = 1.0f / ( 2 * std::min ( Base + head.x, Base - head.y ) + 1 );
+        dist_[ 0 ]         = 1.0f / ( FieldRadius - head.y + 1 );
+        dist_[ 1 ]         = 1.0f / ( 2 * std::min ( FieldRadius - head.x, FieldRadius - head.y ) + 1 );
+        dist_[ 2 ]         = 1.0f / ( FieldRadius - head.x + 1 );
+        dist_[ 3 ]         = 1.0f / ( 2 * std::min ( FieldRadius - head.x, FieldRadius + head.y ) + 1 );
+        dist_[ 4 ]         = 1.0f / ( FieldRadius + head.y + 1 );
+        dist_[ 5 ]         = 1.0f / ( 2 * std::min ( FieldRadius + head.x, FieldRadius + head.y ) + 1 );
+        dist_[ 6 ]         = 1.0f / ( FieldRadius + head.x + 1 );
+        dist_[ 7 ]         = 1.0f / ( 2 * std::min ( FieldRadius + head.x, FieldRadius - head.y ) + 1 );
     }
 
     // Input (activation) for distances to food.
     void distances_to_food ( pointer dist_ ) const noexcept {
         auto [ dir, val ] = distance_point_to_point ( m_snake_body.front ( ), m_food );
-        dist_[ dir ]            = val;
+        dist_[ dir ]      = val;
     }
 
     // Input (activation) for distances to body.
@@ -228,8 +225,8 @@ struct SnakeSpace {
     }
 
     void print ( ) const noexcept {
-        for ( int y = -Base; y <= Base; ++y ) {
-            for ( int x = -Base; x <= Base; ++x ) {
+        for ( int y = -FieldRadius; y <= FieldRadius; ++y ) {
+            for ( int x = -FieldRadius; x <= FieldRadius; ++x ) {
                 Point const p{ static_cast<char> ( x ), static_cast<char> ( y ) };
                 if ( p == m_food )
                     std::wcout << L" o ";
@@ -245,10 +242,8 @@ struct SnakeSpace {
         }
     }
 
-    int m_generation;
-    MoveDirection m_direction;
     int m_move_count, m_energy;
+    MoveDirection m_direction;
     SnakeBody m_snake_body{ 1'024 };
     Point m_food;
-    WorkArea m_ibo;
 };

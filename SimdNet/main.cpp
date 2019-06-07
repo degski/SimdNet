@@ -45,10 +45,14 @@
 
 #include <plf/plf_nanotimer.h>
 
-#include "snake.hpp"
+#include "population.hpp"
 
 
 int main ( ) {
+
+    Population<1'024, 39, 24, 48, 4> p;
+
+    p.run ( );
 
     return EXIT_SUCCESS;
 }

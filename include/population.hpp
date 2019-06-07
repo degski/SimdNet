@@ -38,18 +38,21 @@
 
 #include <sax/uniform_int_distribution.hpp>
 
-#include "rng.hpp"
-#include "uniformly_decreasing_discrete_distribution.hpp"
 #include "fcc.hpp"
+#include "rng.hpp"
+#include "snake.hpp"
+#include "uniformly_decreasing_discrete_distribution.hpp"
 
 #include <plf/plf_nanotimer.h>
 
-template<int PopSize, int NumInput, int NumNeurons, int NumOutput>
+template<int PopSize, int FieldSize, int NumInput, int NumNeurons, int NumOutput>
 struct Population {
 
     static constexpr int BreedSize = PopSize / 2;
 
-    using TheBrain = FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>;
+    using TheBrain   = FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>;
+    using WorkArea   = InputBiasOutput<NumInput, NumNeurons, NumOutput>;
+    using SnakeSpace = SnakeSpace<FieldSize, NumInput, NumNeurons, NumOutput>;
 
     struct Individual {
 
@@ -78,9 +81,11 @@ struct Population {
     }
 
     void evaluate ( ) noexcept {
-        std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
+        static WorkArea work_area;
+        static SnakeSpace snake_space;
+        std::for_each ( std::begin ( m_population ), std::end ( m_population ),
                         []( Individual & i ) noexcept {
-                            i.fitness = i.id->run ( );
+                            i.fitness = snake_space.run ( i.id, work_area.data ( ) );
                             i.age += 1;
                         } );
         std::sort ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
@@ -125,6 +130,15 @@ struct Population {
         return { *m_population[ p0 ].id, *m_population[ p1 ].id };
     }
 
+    void run ( ) noexcept {
+        while ( true ) {
+            evaluate ( );
+            std::wcout << L" generation " << ++m_generation << L" fitness " << m_population[ 0 ].fitness << nl;
+            reproduce ( );
+        }
+    }
+
     private:
     std::vector<Individual> m_population{ PopSize };
+    int m_generation = 0;
 };
