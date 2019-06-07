@@ -166,7 +166,7 @@ struct Population {
             evaluate ( );
             float const af = average_fitness ( );
             std::wcout << L" generation " << std::setw ( 6 ) << ++m_generation << L" fitness " << std::setprecision ( 2 ) << std::fixed
-                       << std::setw ( 6 ) << m_population[ 0 ].fitness << " (" << std::setw ( 6 ) << af << ")" << nl;
+                       << std::setw ( 7 ) << m_population[ 0 ].fitness << " (" << std::setw ( 7 ) << af << ")" << nl;
             reproduce ( );
         }
     }

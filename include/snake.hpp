@@ -143,7 +143,7 @@ struct SnakeSpace {
             m_snake_body.pop_back ( );
         }
         else {
-            m_energy += 50;
+            m_energy += 33;
             random_food ( );
         }
         return true;
