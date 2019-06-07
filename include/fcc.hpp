@@ -104,7 +104,7 @@ struct FullyConnectedNeuralNetwork {
     [[nodiscard]] const_pointer feed_forward ( pointer const ibo_ ) const noexcept {
         const_pointer wgt = m_weights.data ( );
         for ( int i = NumIns; i < NumInsOuts; wgt += i++ )
-            ibo_[ i ] = activation_elliotsig ( cblas_sdot ( i, ibo_, 1, wgt, 1 ), 1.0f );
+            ibo_[ i ] = activation_elliotsig ( cblas_sdot ( i, ibo_, 1, wgt, 1 ), 0.25f );
         return ibo_ + NumInsOuts - NumOutput;
     }
 

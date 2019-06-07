@@ -30,6 +30,7 @@
 
 #include <algorithm>
 #include <execution>
+#include <iomanip>
 #include <limits>
 #include <random>
 #include <sax/iostream.hpp>
@@ -165,7 +166,9 @@ struct Population {
         while ( true ) {
             evaluate ( );
             float const af = average_fitness ( );
-            std::wcout << L" generation " << ++m_generation << L" fitness " << m_population[ 0 ].fitness << " (" << af << ")" << nl;
+            std::wcout << L" generation " << std::setw ( 5 )
+                << ++m_generation << L" fitness " << std::setprecision ( 2 ) << std::fixed
+                       << m_population[ 0 ].fitness << " (" << af << ")" << nl;
             reproduce ( );
         }
     }
