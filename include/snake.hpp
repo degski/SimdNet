@@ -161,8 +161,9 @@ struct SnakeSpace {
 
     // Return the fitness of the network.
     [[nodiscard]] float run ( TheBrain * const brain_, float * const work_space_ ) noexcept {
+        constexpr int repeat = 16;
         std::size_t l = 0;
-        for ( int i = 0; i < 16; ++i ) {
+        for ( int i = 0; i < repeat; ++i ) {
             init_run ( );
             while ( move ( ) ) {           // As long as not dead.
                 distances ( work_space_ ); // Observe the environment.
@@ -171,7 +172,7 @@ struct SnakeSpace {
             }
             l += m_snake_body.size ( );
         }
-        return static_cast<float> ( l ) / 16.0f;
+        return static_cast<float> ( l ) / repeat;
     }
 
     private:

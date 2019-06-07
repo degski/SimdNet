@@ -52,10 +52,11 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>LLVM-9.0.0</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>false</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
     <UseIntelMKL>Parallel</UseIntelMKL>
+    <UseIntelTBB>true</UseIntelTBB>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -207,16 +208,20 @@
       <DebugInformationFormat>None</DebugInformationFormat>
       <FloatingPointModel>Precise</FloatingPointModel>
       <AdditionalIncludeDirectories>$(INTEL_TBB_INCLUDE);$(INTEL_MKL_INCLUDE);../include</AdditionalIncludeDirectories>
-      <AdditionalOptions>-fsanitize=address %(AdditionalOptions)</AdditionalOptions>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\mkl\lib\intel64\mkl_intel_lp64.lib;C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\mkl\lib\intel64\mkl_tbb_thread.lib;C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\mkl\lib\intel64\mkl_core.lib;C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\tbb\lib\intel64\vc14\tbb.lib;C:\Program Files\LLVM\lib\clang\9.0.0\lib\windows\clang_rt.asan_cxx-x86_64.lib;C:\Program Files\LLVM\lib\clang\9.0.0\lib\windows\clang_rt.asan-preinit-x86_64.lib;C:\Program Files\LLVM\lib\clang\9.0.0\lib\windows\clang_rt.asan-x86_64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\mkl\lib\intel64\mkl_intel_lp64.lib;C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\mkl\lib\intel64\mkl_tbb_thread.lib;C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\mkl\lib\intel64\mkl_core.lib;C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\tbb\lib\intel64\vc14\tbb.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>
       </StackReserveSize>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

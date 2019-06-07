@@ -72,29 +72,28 @@ struct Population {
 
     Population ( ) {
         std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
-                        []( Individual & i ) { i.id = new TheBrain ( ); } );
+                        [] ( Individual & i ) { i.id = new TheBrain ( ); } );
     }
 
     ~Population ( ) noexcept {
         std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
-                        []( Individual & i ) noexcept { delete i.id; } );
+                        [] ( Individual & i ) noexcept { delete i.id; } );
     }
 
     void evaluate ( ) noexcept {
         static WorkArea work_area;
         static SnakeSpace snake_space;
-        std::for_each ( std::begin ( m_population ), std::end ( m_population ),
-                        []( Individual & i ) noexcept {
-                            i.fitness = snake_space.run ( i.id, work_area.data ( ) );
-                            i.age += 1;
-                        } );
+        std::for_each ( std::begin ( m_population ), std::end ( m_population ), [] ( Individual & i ) noexcept {
+            i.fitness = snake_space.run ( i.id, work_area.data ( ) );
+            i.age += 1;
+        } );
         std::sort ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
-                    []( Individual const & a, Individual const & b ) noexcept { return a.fitness > b.fitness; } );
+                    [] ( Individual const & a, Individual const & b ) noexcept { return a.fitness > b.fitness; } );
     }
 
     void mutate ( TheBrain * const c_ ) noexcept {
-        int const mup  = std::uniform_int_distribution<int> ( 0, TheBrain::NumWeights - 1 ) ( Rng::gen ( ) ); // mutation point.
-        ( *c_ )[ mup ] += std::normal_distribution<float> ( 0.0f, 0.25f ) ( Rng::gen ( ) );
+        int const mup = std::uniform_int_distribution<int> ( 0, TheBrain::NumWeights - 1 ) ( Rng::gen ( ) ); // mutation point.
+        ( *c_ )[ mup ] += std::normal_distribution<float> ( 0.0f, 1.0f ) ( Rng::gen ( ) );
     }
 
     void crossover ( std::tuple<TheBrain const &, TheBrain const &> p_, TheBrain * const c_ ) noexcept {
@@ -104,20 +103,23 @@ struct Population {
     }
 
     void reproduce ( ) noexcept {
-        //plf::nanotimer t;
-        //t.start ( );
-        std::for_each ( std::execution::par_unseq, std::begin ( m_population ) + BreedSize,
-                        std::end ( m_population ), [this]( Individual & i ) noexcept {
+        // Elitisme.
+        std::copy ( std::begin ( *m_population[ 0 ].id ), std::end ( *m_population[ 0 ].id ),
+                    std::begin ( *m_population[ BreedSize ].id ) );
+        m_population[ BreedSize ].age = m_population[ 0 ].age;
+        // Do the rest.
+        std::for_each ( std::execution::par_unseq, std::begin ( m_population ) + BreedSize + 1, std::end ( m_population ),
+                        [this] ( Individual & i ) noexcept {
                             crossover ( random_couple ( ), i.id );
                             if ( Rng::bernoulli ( 0.05 ) )
                                 mutate ( i.id );
+                            i.age = 0;
                         } );
-       // std::cout << t.get_elapsed_us ( ) / PopSize << " microseconds per network" << nl;
     }
 
     [[nodiscard]] static int sample ( ) noexcept { return uniformly_decreasing_discrete_distribution<BreedSize>{}( Rng::gen ( ) ); }
     [[nodiscard]] static std::tuple<int, int> sample_match ( ) noexcept {
-        auto g                 = []( ) noexcept { return uniformly_decreasing_discrete_distribution<BreedSize>{}( Rng::gen ( ) ); };
+        auto g = [] ( ) noexcept { return uniformly_decreasing_discrete_distribution<BreedSize>{}( Rng::gen ( ) ); };
         std::tuple<int, int> r = { g ( ), g ( ) };
         while ( std::get<0> ( r ) == std::get<1> ( r ) )
             std::get<1> ( r ) = g ( );
@@ -130,10 +132,21 @@ struct Population {
         return { *m_population[ p0 ].id, *m_population[ p1 ].id };
     }
 
+    [[nodiscard]] float average_fitness ( ) const noexcept {
+        float avg = 0.0f;
+        for ( auto const & i : m_population )
+            avg += i.fitness;
+        return avg / PopSize;
+    }
+
     void run ( ) noexcept {
+        float caf = 0.0f
         while ( true ) {
             evaluate ( );
-            std::wcout << L" generation " << ++m_generation << L" fitness " << m_population[ 0 ].fitness << nl;
+            float const af = average_fitness ( );
+            if ( af > caf )
+                caf = af;
+            std::wcout << L" generation " << ++m_generation << L" fitness " << af << " (" << caf << ")" << nl;
             reproduce ( );
         }
     }

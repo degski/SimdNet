@@ -50,9 +50,21 @@
 
 int main ( ) {
 
-    Population<1'024, 39, 24, 12, 4> p;
+    Population<4'096, 39, 24, 6, 4> p;
 
     p.run ( );
 
     return EXIT_SUCCESS;
 }
+
+
+
+/*
+
+-fsanitize=address
+
+C:\Program Files\LLVM\lib\clang\9.0.0\lib\windows\clang_rt.asan_cxx-x86_64.lib
+C:\Program Files\LLVM\lib\clang\9.0.0\lib\windows\clang_rt.asan-preinit-x86_64.lib
+C:\Program Files\LLVM\lib\clang\9.0.0\lib\windows\clang_rt.asan-x86_64.lib
+
+*/
