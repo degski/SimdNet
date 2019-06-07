@@ -140,13 +140,10 @@ struct Population {
     }
 
     void run ( ) noexcept {
-        float caf = 0.0f;
         while ( true ) {
             evaluate ( );
             float const af = average_fitness ( );
-            if ( af > caf )
-                caf = af;
-            std::wcout << L" generation " << ++m_generation << L" fitness " << af << " (" << caf << ")" << nl;
+            std::wcout << L" generation " << ++m_generation << L" fitness " << m_population[0].fitness << " (" << af << ")" << nl;
             reproduce ( );
         }
     }
