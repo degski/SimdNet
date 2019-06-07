@@ -140,7 +140,7 @@ struct Population {
     }
 
     void run ( ) noexcept {
-        float caf = 0.0f
+        float caf = 0.0f;
         while ( true ) {
             evaluate ( );
             float const af = average_fitness ( );
