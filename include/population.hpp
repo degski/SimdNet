@@ -75,7 +75,6 @@ struct Population {
         }
 
         private:
-
         friend class cereal::access;
 
         template<class Archive>
@@ -95,23 +94,23 @@ struct Population {
 
     Population ( ) {
         std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
-                        []( Individual & i ) { i.id = new TheBrain ( ); } );
+                        [] ( Individual & i ) { i.id = new TheBrain ( ); } );
     }
 
     ~Population ( ) noexcept {
         std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
-                        []( Individual & i ) noexcept { delete i.id; } );
+                        [] ( Individual & i ) noexcept { delete i.id; } );
     }
 
     void evaluate ( ) noexcept {
         static WorkArea work_area;
         static SnakeSpace snake_space;
-        std::for_each ( std::begin ( m_population ), std::end ( m_population ), []( Individual & i ) noexcept {
+        std::for_each ( std::begin ( m_population ), std::end ( m_population ), [] ( Individual & i ) noexcept {
             i.fitness = snake_space.run ( i.id, work_area.data ( ) );
             i.age += 1;
         } );
         std::sort ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
-                    []( Individual const & a, Individual const & b ) noexcept { return a.fitness > b.fitness; } );
+                    [] ( Individual const & a, Individual const & b ) noexcept { return a.fitness > b.fitness; } );
     }
 
     void mutate ( TheBrain * const c_ ) noexcept {
@@ -131,8 +130,8 @@ struct Population {
                     std::begin ( *m_population[ BreedSize ].id ) );
         m_population[ BreedSize ].age = m_population[ 0 ].age;
         // Do the rest.
-        std::for_each ( std::execution::par_unseq, std::begin ( m_population ) + BreedSize + 1,
-                        std::end ( m_population ), [this]( Individual & i ) noexcept {
+        std::for_each ( std::execution::par_unseq, std::begin ( m_population ) + BreedSize + 1, std::end ( m_population ),
+                        [this] ( Individual & i ) noexcept {
                             crossover ( random_couple ( ), i.id );
                             if ( Rng::bernoulli ( 0.05 ) )
                                 mutate ( i.id );
@@ -142,7 +141,7 @@ struct Population {
 
     [[nodiscard]] static int sample ( ) noexcept { return uniformly_decreasing_discrete_distribution<BreedSize>{}( Rng::gen ( ) ); }
     [[nodiscard]] static std::tuple<int, int> sample_match ( ) noexcept {
-        auto g                 = []( ) noexcept { return uniformly_decreasing_discrete_distribution<BreedSize>{}( Rng::gen ( ) ); };
+        auto g = [] ( ) noexcept { return uniformly_decreasing_discrete_distribution<BreedSize>{}( Rng::gen ( ) ); };
         std::tuple<int, int> r = { g ( ), g ( ) };
         while ( std::get<0> ( r ) == std::get<1> ( r ) )
             std::get<1> ( r ) = g ( );
@@ -157,8 +156,8 @@ struct Population {
 
     [[nodiscard]] float average_fitness ( ) const noexcept {
         float avg = 0.0f;
-        std::for_each ( std::begin ( m_population ),
-                        std::begin ( m_population ) + BreedSize, [&avg]( Individual const & i ) noexcept { avg += i.fitness; } );
+        std::for_each ( std::begin ( m_population ), std::begin ( m_population ) + BreedSize,
+                        [&avg] ( Individual const & i ) noexcept { avg += i.fitness; } );
         return avg / BreedSize;
     }
 
@@ -166,15 +165,13 @@ struct Population {
         while ( true ) {
             evaluate ( );
             float const af = average_fitness ( );
-            std::wcout << L" generation " << std::setw ( 5 )
-                << ++m_generation << L" fitness " << std::setprecision ( 2 ) << std::fixed
-                       << m_population[ 0 ].fitness << " (" << af << ")" << nl;
+            std::wcout << L" generation " << std::setw ( 6 ) << ++m_generation << L" fitness " << std::setprecision ( 2 ) << std::fixed
+                       << std::setw ( 6 ) << m_population[ 0 ].fitness << " (" << std::setw ( 6 ) << af << ")" << nl;
             reproduce ( );
         }
     }
 
     private:
-
     friend class cereal::access;
 
     template<class Archive>
