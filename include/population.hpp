@@ -94,7 +94,7 @@ struct Population {
 
     void mutate ( TheBrain * const c_ ) noexcept {
         int const mup  = std::uniform_int_distribution<int> ( 0, TheBrain::NumWeights - 1 ) ( Rng::gen ( ) ); // mutation point.
-        ( *c_ )[ mup ] = std::normal_distribution<float> ( 0.0f, 1.0f ) ( Rng::gen ( ) );
+        ( *c_ )[ mup ] += std::normal_distribution<float> ( 0.0f, 0.25f ) ( Rng::gen ( ) );
     }
 
     void crossover ( std::tuple<TheBrain const &, TheBrain const &> p_, TheBrain * const c_ ) noexcept {
@@ -104,15 +104,15 @@ struct Population {
     }
 
     void reproduce ( ) noexcept {
-        plf::nanotimer t;
-        t.start ( );
+        //plf::nanotimer t;
+        //t.start ( );
         std::for_each ( std::execution::par_unseq, std::begin ( m_population ) + BreedSize,
                         std::end ( m_population ), [this]( Individual & i ) noexcept {
                             crossover ( random_couple ( ), i.id );
                             if ( Rng::bernoulli ( 0.05 ) )
                                 mutate ( i.id );
                         } );
-        std::cout << t.get_elapsed_us ( ) / PopSize << " microseconds per network" << nl;
+       // std::cout << t.get_elapsed_us ( ) / PopSize << " microseconds per network" << nl;
     }
 
     [[nodiscard]] static int sample ( ) noexcept { return uniformly_decreasing_discrete_distribution<BreedSize>{}( Rng::gen ( ) ); }

@@ -112,7 +112,7 @@ struct SnakeSpace {
 
     void init_run ( ) noexcept {
         m_move_count = 0;
-        m_energy     = 1'000;
+        m_energy     = 100;
         m_direction  = static_cast<MoveDirection> ( sax::uniform_int_distribution<int>{ 0, 3 }( Rng::gen ( ) ) );
         m_snake_body.clear ( );
         m_snake_body.push_front ( random_point<FieldRadius - 6> ( ) ); // the new tail.
@@ -161,13 +161,17 @@ struct SnakeSpace {
 
     // Return the fitness of the network.
     [[nodiscard]] float run ( TheBrain * const brain_, float * const work_space_ ) noexcept {
-        init_run ( );
-        while ( move ( ) ) {                                                                // As long as not dead.
-            distances ( work_space_ );                                                      // Observe the environment.
-            change_direction ( decide_direction ( brain_->feed_forward ( work_space_ ) ) ); // Run the data and decide where to go.
+        std::size_t l = 0;
+        for ( int i = 0; i < 16; ++i ) {
+            init_run ( );
+            while ( move ( ) ) {           // As long as not dead.
+                distances ( work_space_ ); // Observe the environment.
+                change_direction (
+                    decide_direction ( brain_->feed_forward ( work_space_ ) ) ); // Run the data and decide where to go.
+            }
+            l += m_snake_body.size ( );
         }
-        // std::wcout << L"moves " << m_move_count << nl;
-        return static_cast<float> ( m_move_count > 500 ? 0 : m_move_count );
+        return static_cast<float> ( l ) / 16.0f;
     }
 
     private:

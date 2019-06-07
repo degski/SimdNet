@@ -50,7 +50,7 @@
 
 int main ( ) {
 
-    Population<1'024, 39, 24, 48, 4> p;
+    Population<1'024, 39, 24, 12, 4> p;
 
     p.run ( );
 
