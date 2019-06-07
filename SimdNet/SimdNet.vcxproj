@@ -225,10 +225,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="globals.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\fcc.hpp" />
+    <ClInclude Include="..\include\globals.hpp" />
     <ClInclude Include="..\include\population.hpp" />
     <ClInclude Include="..\include\rng.hpp" />
     <ClInclude Include="..\include\snake.hpp" />

@@ -36,6 +36,10 @@
 #include <random>
 #include <sax/iostream.hpp>
 
+#include <cereal/cereal.hpp>
+#include <cereal/types/array.hpp>
+#include <cereal/archives/binary.hpp>
+
 #include "rng.hpp"
 
 // Space to be used for feed-forward-calculation.
@@ -139,5 +143,13 @@ struct FullyConnectedNeuralNetwork {
     [[nodiscard]] const_iterator cend ( ) const noexcept { return const_iterator ( m_weights.cend ( ) ); }
 
     private:
+
+    friend class cereal::access;
+
+    template<class Archive>
+    void serialize ( Archive & ar_ ) {
+        ar_ ( m_weights );
+    }
+
     wgt_type m_weights;
 };
