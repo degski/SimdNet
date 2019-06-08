@@ -24,8 +24,58 @@
 #pragma once
 
 #include <filesystem>
+#include <fstream>
+#include <string>
 
 namespace fs = std::filesystem;
 
+#include <cereal/cereal.hpp>
+#include <cereal/archives/binary.hpp>
+#include <cereal/archives/xml.hpp>
+
 extern fs::path const & g_app_data_path;
 extern fs::path const & g_app_path;
+
+template<typename T>
+void save_to_file_bin ( T const & t_, fs::path && path_, std::string && file_name_, bool const append_ = false ) noexcept {
+    std::ofstream ostream ( path_ / ( file_name_ + std::string ( ".cereal" ) ),
+                            append_ ? std::ios::binary | std::ios::app | std::ios::out : std::ios::binary | std::ios::out );
+    {
+        cereal::BinaryOutputArchive archive ( ostream );
+        archive ( t_ );
+    }
+    ostream.flush ( );
+    ostream.close ( );
+}
+
+template<typename T>
+void load_from_file_bin ( T & t_, fs::path && path_, std::string && file_name_ ) noexcept {
+    std::ifstream istream ( path_ / ( file_name_ + std::string ( ".cereal" ) ), std::ios::binary );
+    {
+        cereal::BinaryInputArchive archive ( istream );
+        archive ( t_ );
+    }
+    istream.close ( );
+}
+
+template<typename T>
+void save_to_file_xml ( T const & t_, fs::path && path_, std::string && file_name_, bool const append_ = false ) noexcept {
+    std::ofstream ostream ( path_ / ( file_name_ + std::string ( ".xmlcereal" ) ),
+                            append_ ? std::ios::app | std::ios::out : std::ios::out );
+    {
+        cereal::XMLOutputArchive archive ( ostream );
+        archive ( t_ );
+    }
+    ostream.flush ( );
+    ostream.close ( );
+}
+
+template<typename T>
+void load_from_file_xml ( T & t_, fs::path && path_, std::string && file_name_ ) noexcept {
+    std::ifstream istream ( path_ / ( file_name_ + std::string ( ".xmlcereal" ) ) );
+    {
+        cereal::XMLInputArchive archive ( istream );
+        archive ( t_ );
+    }
+    istream.close ( );
+}

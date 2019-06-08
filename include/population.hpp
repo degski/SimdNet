@@ -39,10 +39,11 @@
 
 #include <sax/uniform_int_distribution.hpp>
 
-#include <cereal/archives/binary.hpp>
 #include <cereal/cereal.hpp>
+#include <cereal/archives/binary.hpp>
 #include <cereal/types/vector.hpp>
 
+#include "globals.hpp"
 #include "fcc.hpp"
 #include "rng.hpp"
 #include "snake.hpp"
@@ -79,13 +80,14 @@ struct Population {
 
         template<class Archive>
         void save ( Archive & ar_ ) const {
+            ar_ ( fitness );
             ar_ ( age );
             ar_ ( *id );
         }
 
         template<class Archive>
         void load ( Archive & ar_ ) {
-            fitness = 0.0f;
+            ar_ ( fitness );
             ar_ ( age );
             id = new TheBrain ( );
             ar_ ( *id );
@@ -111,6 +113,7 @@ struct Population {
         } );
         std::sort ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
                     [] ( Individual const & a, Individual const & b ) noexcept { return a.fitness > b.fitness; } );
+        save_to_file_bin ( *this, "y://tmp", "population" );
     }
 
     void mutate ( TheBrain * const c_ ) noexcept {

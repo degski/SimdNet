@@ -32,7 +32,7 @@
 #include <limits>
 #include <random>
 
-#include <sax/prng.hpp>
+#include <sax/prng_jsf.hpp>
 
 #if defined( _DEBUG )
 #    define RANDOM 0

@@ -249,6 +249,6 @@ struct SnakeSpace {
 
     int m_move_count, m_energy;
     MoveDirection m_direction;
-    SnakeBody m_snake_body{ 1'024 };
+    SnakeBody m_snake_body{ 384 };
     Point m_food;
 };

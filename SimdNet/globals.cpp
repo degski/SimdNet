@@ -44,7 +44,7 @@ fs::path const & g_app_data_path = app_data_path_;
 
 [[nodiscard]] fs::path getExePath ( ) noexcept {
     TCHAR exename[ 1024 ];
-    GetModuleFileName ( NULL, exename, 1024 );
+    GetModuleFileName ( NULL, exename, 1'024 );
     return fs::path ( exename ).parent_path ( );
 }
 
