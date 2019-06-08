@@ -44,6 +44,13 @@ template<typename Popper, typename T, size_t N>
     return { arr, arr + N, arr, N };
 }
 
+template<typename Popper, typename T, size_t N>
+[[nodiscard]] constexpr nonstd::ring_span<T, Popper> make_ring_span ( ) noexcept {
+    static thread_local std::array<T, N> & std_arr;
+    return { std_arr.data ( ), std_arr.data ( ) + N, std_arr.data ( ), N };
+}
+
+
 #include <plf/plf_nanotimer.h>
 
 #include <sax/uniform_int_distribution.hpp>
