@@ -232,6 +232,7 @@
     <ClInclude Include="..\include\fcc.hpp" />
     <ClInclude Include="..\include\globals.hpp" />
     <ClInclude Include="..\include\population.hpp" />
+    <ClInclude Include="..\include\ring_span.hpp" />
     <ClInclude Include="..\include\rng.hpp" />
     <ClInclude Include="..\include\snake.hpp" />
     <ClInclude Include="..\include\uniformly_decreasing_discrete_distribution.hpp" />

@@ -47,7 +47,6 @@
 
 #include "population.hpp"
 
-
 int main ( ) {
 
     Population<4'096, 39, 24, 8, 4> p;

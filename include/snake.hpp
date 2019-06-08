@@ -35,7 +35,14 @@
 #include <string>
 #include <type_traits>
 
-#include <boost/circular_buffer.hpp>
+#include "ring_span.hpp"
+
+// Make from std arrays.
+template<typename Popper, typename T, size_t N>
+[[nodiscard]] constexpr nonstd::ring_span<T, Popper> make_ring_span ( std::array<T, N> & std_arr_ ) noexcept {
+    auto arr = std_arr_.data ( );
+    return { arr, arr + N, arr, N };
+}
 
 #include <plf/plf_nanotimer.h>
 
@@ -82,7 +89,7 @@ struct SnakeSpace {
 
     enum class MoveDirection : int { no, ea, so, we };
 
-    using SnakeBody = boost::circular_buffer<Point>;
+    using SnakeBody = nonstd::ring_span<Point, nonstd::null_popper<Point>>;
 
     using pointer         = float *;
     using const_pointer   = float const *;
@@ -90,6 +97,9 @@ struct SnakeSpace {
     using const_reference = float const &;
 
     using TheBrain = FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>;
+
+    SnakeSpace ( ) noexcept :
+        m_snake_body{ make_ring_span<nonstd::null_popper<Point>> ( m_snake_body_data ) } { }
 
     [[nodiscard]] inline bool in_range ( Point const & p_ ) const noexcept {
         return p_.x >= -FieldRadius and p_.y >= -FieldRadius and p_.x <= FieldRadius and p_.y <= FieldRadius;
@@ -115,13 +125,13 @@ struct SnakeSpace {
         m_energy     = 100;
         m_direction  = static_cast<MoveDirection> ( sax::uniform_int_distribution<int>{ 0, 3 }( Rng::gen ( ) ) );
         m_snake_body.clear ( );
-        m_snake_body.push_front ( random_point<FieldRadius - 6> ( ) ); // the new tail.
-        m_snake_body.push_front ( extend_head ( ) );
-        m_snake_body.push_front ( extend_head ( ) ); // the new head.
+        m_snake_body.emplace_front ( random_point<FieldRadius - 6> ( ) ); // the new tail.
+        m_snake_body.emplace_front ( extend_head ( ) );
+        m_snake_body.emplace_front ( extend_head ( ) ); // the new head.
         random_food ( );
     }
 
-    [[nodiscard]] Point extend_head ( ) const noexcept {
+    [[nodiscard]] inline Point extend_head ( ) const noexcept {
         switch ( m_direction ) {
             case MoveDirection::no: return Point{ +0, +1 } + m_snake_body.front ( );
             case MoveDirection::ea: return Point{ +1, +0 } + m_snake_body.front ( );
@@ -135,7 +145,7 @@ struct SnakeSpace {
     bool move ( ) noexcept {
         ++m_move_count;
         --m_energy;
-        m_snake_body.push_front ( extend_head ( ) );
+        m_snake_body.emplace_front ( extend_head ( ) );
         if ( not m_energy or not in_range ( m_snake_body.front ( ) ) ) {
             return false;
         }
@@ -161,7 +171,7 @@ struct SnakeSpace {
 
     // Return the fitness of the network.
     [[nodiscard]] float run ( TheBrain * const brain_, float * const work_space_ ) noexcept {
-        constexpr int repeat = 16;
+        constexpr int repeat = 8;
         std::size_t l = 0;
         for ( int i = 0; i < repeat; ++i ) {
             init_run ( );
@@ -249,6 +259,7 @@ struct SnakeSpace {
 
     int m_move_count, m_energy;
     MoveDirection m_direction;
-    SnakeBody m_snake_body{ 384 };
+    std::array<Point, 384> m_snake_body_data;
+    SnakeBody m_snake_body;
     Point m_food;
 };
