@@ -98,7 +98,7 @@ struct FullyConnectedNeuralNetwork {
 
     FullyConnectedNeuralNetwork ( ) noexcept {
         std::generate ( std::begin ( m_weights ), std::end ( m_weights ),
-                        [] ( ) { return std::uniform_real_distribution<float> ( -1.0f, 1.0f ) ( Rng::gen ( ) ); } );
+                        [] ( ) noexcept { return std::uniform_real_distribution<float> ( -1.0f, 1.0f ) ( Rng::gen ( ) ); } );
     }
 
     [[nodiscard]] const_pointer feed_forward ( pointer const ibo_ ) const noexcept {

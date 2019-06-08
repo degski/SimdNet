@@ -205,7 +205,7 @@ struct SnakeSpace {
 
     // Input (activation) for distances to food.
     void distances_to_food ( pointer dist_ ) const noexcept {
-        auto [ dir, val ] = distance_point_to_point ( m_snake_body.front ( ), m_food );
+        auto const [ dir, val ] = distance_point_to_point ( m_snake_body.front ( ), m_food );
         dist_[ dir ]      = val;
     }
 
@@ -215,7 +215,7 @@ struct SnakeSpace {
         auto const end     = std::end ( m_snake_body );
         auto it            = std::begin ( m_snake_body ); // This assumes the length of the snake is at least 2.
         while ( ++it != end ) {
-            auto [ dir, val ] = distance_point_to_point ( head, *it );
+            auto const [ dir, val ] = distance_point_to_point ( head, *it );
             if ( val > dist_[ dir ] )
                 dist_[ dir ] = val;
         }
