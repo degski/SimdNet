@@ -171,7 +171,7 @@ struct SnakeSpace {
 
     // Return the fitness of the network.
     [[nodiscard]] float run ( TheBrain * const brain_, float * const work_space_ ) noexcept {
-        constexpr int repeat = 8;
+        constexpr int repeat = 16;
         std::size_t l = 0;
         for ( int i = 0; i < repeat; ++i ) {
             init_run ( );

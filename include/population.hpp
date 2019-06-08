@@ -39,12 +39,12 @@
 
 #include <sax/uniform_int_distribution.hpp>
 
-#include <cereal/cereal.hpp>
 #include <cereal/archives/binary.hpp>
+#include <cereal/cereal.hpp>
 #include <cereal/types/vector.hpp>
 
-#include "globals.hpp"
 #include "fcc.hpp"
+#include "globals.hpp"
 #include "rng.hpp"
 #include "snake.hpp"
 #include "uniformly_decreasing_discrete_distribution.hpp"
@@ -168,8 +168,8 @@ struct Population {
         while ( true ) {
             evaluate ( );
             float const af = average_fitness ( );
-            std::wcout << L" generation " << std::setw ( 6 ) << ++m_generation << L" fitness " << std::setprecision ( 2 ) << std::fixed
-                       << std::setw ( 7 ) << m_population[ 0 ].fitness << " (" << std::setw ( 7 ) << af << ")" << nl;
+            std::wcout << L" generation " << std::setw ( 6 ) << ++m_generation << L" fitness " << std::setprecision ( 2 )
+                       << std::fixed << std::setw ( 7 ) << m_population[ 0 ].fitness << " (" << std::setw ( 7 ) << af << ")" << nl;
             reproduce ( );
         }
     }
