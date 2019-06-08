@@ -37,19 +37,19 @@
 
 #include "ring_span.hpp"
 
-// Make from std arrays.
+// Make ring_span from std arrays.
 template<typename Popper, typename T, size_t N>
 [[nodiscard]] constexpr nonstd::ring_span<T, Popper> make_ring_span ( std::array<T, N> & std_arr_ ) noexcept {
     auto arr = std_arr_.data ( );
     return { arr, arr + N, arr, N };
 }
 
+// A thread-safe singleton ring(-span).
 template<typename Popper, typename T, size_t N>
-[[nodiscard]] constexpr nonstd::ring_span<T, Popper> make_ring_span ( ) noexcept {
-    static thread_local std::array<T, N> & std_arr;
+[[nodiscard]] nonstd::ring_span<T, Popper> make_ring_span ( ) noexcept {
+    static thread_local std::array<T, N> & std_arr{};
     return { std_arr.data ( ), std_arr.data ( ) + N, std_arr.data ( ), N };
 }
-
 
 #include <plf/plf_nanotimer.h>
 
