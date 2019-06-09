@@ -131,7 +131,7 @@ struct SnakeSpace {
         m_move_count = 0;
         m_energy     = 100;
         m_direction  = static_cast<MoveDirection> ( sax::uniform_int_distribution<int>{ 0, 3 }( Rng::gen ( ) ) );
-        m_snake_body.clear ( );
+        m_snake_body = SnakeBody{ std::begin ( m_snake_body_data ), std::end ( m_snake_body_data ) };
         m_snake_body.emplace_front ( random_point<FieldRadius - 6> ( ) ); // the new tail.
         m_snake_body.emplace_front ( extend_head ( ) );
         m_snake_body.emplace_front ( extend_head ( ) ); // the new head.

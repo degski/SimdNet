@@ -105,9 +105,10 @@ struct Population {
     }
 
     void evaluate ( ) noexcept {
-        static WorkArea work_area;
-        static SnakeSpace snake_space;
-        std::for_each ( std::begin ( m_population ), std::end ( m_population ), [] ( Individual & i ) noexcept {
+        static thread_local WorkArea work_area;
+        static thread_local SnakeSpace snake_space;
+        std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
+                        []( Individual & i ) noexcept {
             i.fitness = snake_space.run ( i.id, work_area.data ( ) );
             i.age += 1;
         } );
