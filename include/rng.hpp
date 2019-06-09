@@ -65,8 +65,14 @@ struct Rng final {
     static void seed ( std::uint64_t const s_ = 0u ) noexcept { Rng::gen ( ).seed ( s_ ? s_ : sax::os_seed ( ) ); }
 
     [[nodiscard]] static sax::Rng & gen ( ) noexcept {
-        static thread_local sax::Rng generator ( RANDOM ? sax::os_seed ( ) : sax::fixed_seed ( ) );
-        return generator;
+        if constexpr ( RANDOM ) {
+            static thread_local sax::Rng generator ( sax::os_seed ( ), sax::os_seed ( ), sax::os_seed ( ), sax::os_seed ( ) );
+            return generator;
+        }
+        else {
+            static thread_local sax::Rng generator ( sax::fixed_seed ( ) );
+            return generator;
+        }
     }
 };
 
