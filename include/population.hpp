@@ -32,6 +32,7 @@
 #include <execution>
 #include <iomanip>
 #include <limits>
+#include <numeric>
 #include <random>
 #include <sax/iostream.hpp>
 #include <span>
@@ -106,10 +107,10 @@ struct Population {
     void evaluate ( ) noexcept {
         static thread_local SnakeSpace snake_space;
         std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
-                        []( Individual & i ) noexcept {
-            i.fitness = snake_space.run ( i.id );
-            i.age += 1;
-        } );
+                        [] ( Individual & i ) noexcept {
+                            i.fitness = snake_space.run ( i.id );
+                            i.age += 1;
+                        } );
         std::sort ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
                     [] ( Individual const & a, Individual const & b ) noexcept { return a.fitness > b.fitness; } );
         save_to_file_bin ( *this, "y://tmp", "population" );
@@ -157,10 +158,10 @@ struct Population {
     }
 
     [[nodiscard]] float average_fitness ( ) const noexcept {
-        float avg = 0.0f;
-        std::for_each ( std::begin ( m_population ), std::begin ( m_population ) + BreedSize,
-                        [&avg] ( Individual const & i ) noexcept { avg += i.fitness; } );
-        return avg / BreedSize;
+        return std::transform_reduce ( std::execution::par_unseq, std::begin ( m_population ),
+                                       std::begin ( m_population ) + BreedSize, 0.0f, std::plus<> ( ),
+                                       [] ( Individual const & i ) noexcept { return i.fitness; } ) /
+               BreedSize;
     }
 
     void run ( ) noexcept {
