@@ -104,6 +104,7 @@ struct SnakeSpace {
     using const_reference = float const &;
 
     using TheBrain = FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>;
+    using WorkArea = InputBiasOutput<NumInput, NumNeurons, NumOutput>;
 
     SnakeSpace ( ) noexcept :
         m_snake_body{ make_ring_span<nonstd::null_popper<Point>> ( m_snake_body_data ) } { }
@@ -177,16 +178,17 @@ struct SnakeSpace {
     }
 
     // Return the fitness of the network.
-    [[nodiscard]] float run ( TheBrain * const brain_, float * const work_space_ ) noexcept {
+    [[nodiscard]] float run ( TheBrain * const brain_ ) noexcept {
+        static thread_local WorkArea work_area;
         constexpr int repeat = 16;
         std::size_t l = 0;
         for ( int i = 0; i < repeat; ++i ) {
             init_run ( );
-            while ( move ( ) ) {           // As long as not dead.
-                distances ( work_space_ ); // Observe the environment.
+            while ( move ( ) ) {                                                        // As long as not dead.
+                distances ( work_area.data ( ) );                                       // Observe the environment.
                 change_direction (
-                    decide_direction ( brain_->feed_forward ( work_space_ ) ) ); // Run the data and decide where to go.
-            }
+                    decide_direction ( brain_->feed_forward ( work_area.data ( ) ) ) ); // Run the data and decide where to go,
+            }                                                                           // and change direction.
             l += m_snake_body.size ( );
         }
         return static_cast<float> ( l ) / repeat;

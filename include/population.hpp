@@ -57,7 +57,6 @@ struct Population {
     static constexpr int BreedSize = PopSize / 2;
 
     using TheBrain   = FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>;
-    using WorkArea   = InputBiasOutput<NumInput, NumNeurons, NumOutput>;
     using SnakeSpace = SnakeSpace<FieldSize, NumInput, NumNeurons, NumOutput>;
 
     struct Individual {
@@ -105,11 +104,10 @@ struct Population {
     }
 
     void evaluate ( ) noexcept {
-        static thread_local WorkArea work_area;
         static thread_local SnakeSpace snake_space;
         std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
                         []( Individual & i ) noexcept {
-            i.fitness = snake_space.run ( i.id, work_area.data ( ) );
+            i.fitness = snake_space.run ( i.id );
             i.age += 1;
         } );
         std::sort ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
