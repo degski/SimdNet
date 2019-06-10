@@ -49,14 +49,12 @@
 
 int main ( ) {
 
-    Population<4'096, 39, 24, 8, 4> p;
+    Population<4'096 * 8, 39, 24, 5, 4> p;
 
     p.run ( );
 
     return EXIT_SUCCESS;
 }
-
-
 
 /*
 

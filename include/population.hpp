@@ -55,7 +55,7 @@
 template<int PopSize, int FieldSize, int NumInput, int NumNeurons, int NumOutput>
 struct Population {
 
-    static constexpr int BreedSize = PopSize / 2;
+    static constexpr int BreedSize = PopSize / 8;
 
     using TheBrain   = FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>;
     using SnakeSpace = SnakeSpace<FieldSize, NumInput, NumNeurons, NumOutput>;
@@ -108,12 +108,11 @@ struct Population {
         static thread_local SnakeSpace snake_space;
         std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
                         [] ( Individual & i ) noexcept {
-                            i.fitness = snake_space.run ( i.id );
-                            i.age += 1;
+                            i.fitness += ( snake_space.run ( i.id ) - i.fitness ) / ++i.age; // Maintain the average.
                         } );
         std::sort ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
                     [] ( Individual const & a, Individual const & b ) noexcept { return a.fitness > b.fitness; } );
-        save_to_file_bin ( *this, "z://tmp", "population" );
+        // save_to_file_bin ( *this, "z://tmp", "population" );
     }
 
     void mutate ( TheBrain * const c_ ) noexcept {
