@@ -132,7 +132,7 @@ static void normProbs ( std::vector<std::uint32_t> & probs ) {
     }
 
     // figure out the scale
-again:
+    again:
     for ( std::uint32_t i = 0; i < probs.size ( ); i++ )
         scale += ( ( probs[ i ] << shift ) >> 8 );
 
@@ -212,7 +212,7 @@ class KxuNuRand : public KxuRand {
 };
 
 std::uint32_t KxuNuRand::getRandom ( ) {
-    const Distribution & dist = mDist[ mRand->getRandomInRange ( mDist.size ( ) ) ];
+    const Distribution & dist = mDist[ mRand->getRandomInRange ( static_cast<std::uint32_t> ( mDist.size ( ) ) ) ];
     return ( mRand->getRandom ( ) <= dist.mProb ) ? dist.mA : dist.mB;
 }
 
