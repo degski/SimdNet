@@ -127,18 +127,12 @@ struct Population {
     }
 
     void reproduce ( ) noexcept {
-        // Elitisme.
-        std::copy ( std::begin ( *m_population[ 0 ].id ), std::end ( *m_population[ 0 ].id ),
-                    std::begin ( *m_population[ BreedSize ].id ) );
-        m_population[ BreedSize ].fitness = m_population[ 0 ].fitness;
-        m_population[ BreedSize ].age = m_population[ 0 ].age;
-        // Do the rest.
-        std::for_each ( std::execution::par_unseq, std::begin ( m_population ) + BreedSize + 1, std::end ( m_population ),
+        std::for_each ( std::execution::par_unseq, std::begin ( m_population ) + BreedSize, std::end ( m_population ),
                         [this] ( Individual & i ) noexcept {
                             crossover ( random_couple ( ), i.id );
                             if ( Rng::bernoulli ( 0.05 ) )
                                 mutate ( i.id );
-                            i.fitness = 0.0;
+                            i.fitness = 0.0f;
                             i.age = 0;
                         } );
     }
