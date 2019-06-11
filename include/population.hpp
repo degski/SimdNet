@@ -130,6 +130,7 @@ struct Population {
         // Elitisme.
         std::copy ( std::begin ( *m_population[ 0 ].id ), std::end ( *m_population[ 0 ].id ),
                     std::begin ( *m_population[ BreedSize ].id ) );
+        m_population[ BreedSize ].fitness = m_population[ 0 ].fitness;
         m_population[ BreedSize ].age = m_population[ 0 ].age;
         // Do the rest.
         std::for_each ( std::execution::par_unseq, std::begin ( m_population ) + BreedSize + 1, std::end ( m_population ),
@@ -137,6 +138,7 @@ struct Population {
                             crossover ( random_couple ( ), i.id );
                             if ( Rng::bernoulli ( 0.05 ) )
                                 mutate ( i.id );
+                            i.fitness = 0.0;
                             i.age = 0;
                         } );
     }
