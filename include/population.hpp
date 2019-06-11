@@ -107,9 +107,9 @@ struct Population {
     void evaluate ( ) noexcept {
         static thread_local SnakeSpace snake_space;
         std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
-                        [] ( Individual & i ) noexcept {
-                            i.fitness += ( snake_space.run ( i.id ) - i.fitness ) / ++i.age; // Maintain the average.
-                        } );
+            [] ( Individual & i ) noexcept {
+                i.fitness += ( ( snake_space.run ( i.id ) - i.fitness ) / static_cast<float> ( ++i.age ) ); // Maintain the average.
+            } );
         std::sort ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
                     [] ( Individual const & a, Individual const & b ) noexcept { return a.fitness > b.fitness; } );
         // save_to_file_bin ( *this, "z://tmp", "population" );
@@ -156,15 +156,25 @@ struct Population {
         return std::transform_reduce ( std::execution::par_unseq, std::begin ( m_population ),
                                        std::begin ( m_population ) + BreedSize, 0.0f, std::plus<> ( ),
                                        [] ( Individual const & i ) noexcept { return i.fitness; } ) /
-               BreedSize;
+               static_cast<float> ( BreedSize );
+    }
+
+    [[nodiscard]] float average_age ( ) const noexcept {
+        return static_cast<float> ( std::transform_reduce ( std::execution::par_unseq, std::begin ( m_population ),
+                                       std::begin ( m_population ) + BreedSize, 0, std::plus<> ( ),
+                                       []( Individual const & i ) noexcept { return i.age; } ) ) /
+               static_cast<float> ( BreedSize );
     }
 
     void run ( ) noexcept {
         while ( true ) {
             evaluate ( );
             float const af = average_fitness ( );
+            float const aa = average_age ( );
+            //std::wcout << m_population[ 0 ].fitness << L' ' << m_population[ 0 ].age << L' ' << af << L' ' << aa << nl;
             std::wcout << L" generation " << std::setw ( 6 ) << ++m_generation << L" fitness " << std::setprecision ( 2 )
-                       << std::fixed << std::setw ( 7 ) << m_population[ 0 ].fitness << " (" << std::setw ( 7 ) << af << ")" << nl;
+                       << std::fixed << std::setw ( 7 ) << m_population[ 0 ].fitness << L" " << m_population[ 0 ].age << " ("
+                       << std::setw ( 7 ) << af << L" " << aa << ")" << nl;
             reproduce ( );
         }
     }
