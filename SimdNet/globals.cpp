@@ -23,6 +23,7 @@
 
 #include <Windows.h>
 
+#include <cstdio>
 #include <cstdlib>
 
 #include <filesystem>
@@ -50,3 +51,23 @@ fs::path const & g_app_data_path = app_data_path_;
 
 fs::path app_path_          = getExePath ( );
 fs::path const & g_app_path = app_path_;
+
+std::string get_timestamp_utc ( ) noexcept {
+    time_t rawtime = time ( NULL );
+    struct tm ptm;
+    gmtime_s ( &ptm, &rawtime );
+    char buffer[ 32 ]{};
+    std::snprintf ( buffer, 32, "%4i%02i%02i%02i%02i%02i", ptm.tm_year + 1900, ptm.tm_mon + 1, ptm.tm_mday, ptm.tm_hour, ptm.tm_min,
+               ptm.tm_sec );
+    return { buffer };
+}
+
+std::string get_timestamp ( ) noexcept {
+    time_t rawtime = time ( NULL );
+    struct tm ptm;
+    localtime_s ( &ptm, &rawtime );
+    char buffer[ 32 ]{};
+    std::snprintf ( buffer, 32, "%4i%02i%02i%02i%02i%02i", ptm.tm_year + 1900, ptm.tm_mon + 1, ptm.tm_mday, ptm.tm_hour, ptm.tm_min,
+               ptm.tm_sec );
+    return { buffer };
+}

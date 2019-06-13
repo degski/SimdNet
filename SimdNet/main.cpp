@@ -444,6 +444,67 @@ final class AliasMethod {
 
 #endif
 
+
+#if 0
+
+template<int Size, typename T = int>
+struct vose_alias {
+
+    static_assert ( Size > 1, "size should be larger than 1" );
+
+    using result_type = T;
+
+    // Sample with a linearly decreasing probability.
+    // Iff size was 3, the probabilities of the CDF would
+    // be 3/6, 5/6, 6/6 (or 3/6, 2/6, 1/6 for the PDF).
+    template<typename Generator>
+    result_type operator( ) ( Generator & gen_ ) noexcept {
+        int const i = sax::uniform_int_distribution<int> ( 0, Sum ) ( gen_ ); // needs uniform bits generator.
+        return static_cast<result_type> ( std::lower_bound ( std::begin ( m_sample_table ), std::end ( m_sample_table ), i ) -
+                                          std::begin ( m_sample_table ) );
+    }
+
+    void reset ( ) const noexcept {}
+
+    [[nodiscard]] constexpr result_type min ( ) const noexcept { return result_type{ 0 }; }
+    [[nodiscard]] constexpr result_type max ( ) const noexcept { return result_type{ Size - 1 }; }
+
+    /*
+    [[nodiscard]] std::vector<double> probabilities ( ) const {
+        std::vector<double> table{ Size, 0.0 };
+        for ( T n = Size, i = 0; i < Size; ++i, --n )
+            table[ i ] = static_cast<double> ( n ) / static_cast<double> ( Sum );
+        return table;
+    }
+    */
+
+    private:
+    using SampleTable = std::array<T, Size>;
+
+    static constexpr int Sum = Size % 2 == 0 ? ( ( Size / 2 ) * ( Size + 1 ) ) : ( Size * ( ( Size + 1 ) / 2 ) );
+
+    [[nodiscard]] static constexpr Table generate_sample_tables ( ) noexcept {
+        Tables tables;
+
+
+
+
+        return tables;
+    }
+
+    // The probability and alias tables.
+    struct Tables {
+        std::array<T, Size> m_alias{};
+        std::array<float, Size> m_probability{};
+    }
+
+    static constexpr Tables const m_sample_tables = generate_sample_tables ( );
+};
+
+#endif
+
+
+
 /*
 
     f(x) = 255 - a * log ( x + 1 ) with a = 255 / log ( 256 ) ~=~ 46

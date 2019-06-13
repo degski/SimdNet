@@ -35,26 +35,20 @@
 #include <sax/uniform_int_distribution.hpp>
 
 template<int Size, typename T = int>
-struct uniformly_decreasing_discrete_distribution {
+struct uniformly_decreasing_discrete_distribution;
+
+template<int Size, typename T = int>
+struct param_type {
 
     static_assert ( Size > 1, "size should be larger than 1" );
 
+    template<int Size, typename T>
+    friend struct uniformly_decreasing_discrete_distribution;
+
     using result_type = T;
+    using distribution_type = uniformly_decreasing_discrete_distribution<Size, T>;
 
-    // Sample with a linearly decreasing probability.
-    // Iff size was 3, the probabilities of the CDF would
-    // be 3/6, 5/6, 6/6 (or 3/6, 2/6, 1/6 for the PDF).
-    template<typename Generator>
-    result_type operator( ) ( Generator & gen_ ) noexcept {
-        int const i = sax::uniform_int_distribution<int> ( 0, Sum ) ( gen_ ); // needs uniform bits generator.
-        return static_cast<result_type> ( std::lower_bound ( std::begin ( m_sample_table ), std::end ( m_sample_table ), i ) -
-                                          std::begin ( m_sample_table ) );
-    }
-
-    void reset ( ) const noexcept {}
-
-    [[nodiscard]] constexpr result_type min ( ) const noexcept { return result_type{ 0 }; }
-    [[nodiscard]] constexpr result_type max ( ) const noexcept { return result_type{ Size - 1 }; }
+    constexpr param_type ( ) noexcept = default;
 
     [[nodiscard]] std::vector<double> probabilities ( ) const {
         std::vector<double> table{ Size, 0.0 };
@@ -63,7 +57,11 @@ struct uniformly_decreasing_discrete_distribution {
         return table;
     }
 
+    bool operator== ( const param_type & right ) const noexcept { return true; };
+    bool operator!= ( const param_type & right ) const noexcept { return false; };
+
     private:
+
     using SampleTable = std::array<T, Size>;
 
     static constexpr int Sum = Size % 2 == 0 ? ( ( Size / 2 ) * ( Size + 1 ) ) : ( Size * ( ( Size + 1 ) / 2 ) );
@@ -76,4 +74,29 @@ struct uniformly_decreasing_discrete_distribution {
     }
 
     static constexpr SampleTable const m_sample_table = generate_sample_table ( );
+};
+
+template<int Size, typename T>
+struct uniformly_decreasing_discrete_distribution : param_type<Size, T> {
+
+    static_assert ( Size > 1, "size should be larger than 1" );
+
+    using result_type = T;
+    using param_type = param_type<Size, T>;
+
+    // Sample with a linearly decreasing probability.
+    // Iff size was 3, the probabilities of the CDF would
+    // be 3/6, 5/6, 6/6 (or 3/6, 2/6, 1/6 for the PDF).
+    template<typename Generator>
+    result_type operator( ) ( Generator & gen_ ) noexcept {
+        int const i = sax::uniform_int_distribution<int> ( 0, param_type::Sum ) ( gen_ ); // needs uniform bits generator.
+        return static_cast<result_type> (
+            std::lower_bound ( std::begin ( param_type::m_sample_table ), std::end ( param_type::m_sample_table ), i ) -
+            std::begin ( param_type::m_sample_table ) );
+    }
+
+    void reset ( ) const noexcept {}
+
+    [[nodiscard]] constexpr result_type min ( ) const noexcept { return result_type{ 0 }; }
+    [[nodiscard]] constexpr result_type max ( ) const noexcept { return result_type{ Size - 1 }; }
 };

@@ -79,3 +79,6 @@ void load_from_file_xml ( T & t_, fs::path && path_, std::string && file_name_ )
     }
     istream.close ( );
 }
+
+std::string get_timestamp_utc ( ) noexcept;
+std::string get_timestamp ( ) noexcept;
