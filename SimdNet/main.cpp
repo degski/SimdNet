@@ -444,6 +444,11 @@ final class AliasMethod {
 
 #endif
 
+#ifdef small
+#    define org_small small
+#    undef small
+#endif
+
 // http://www.keithschwarz.com/darts-dice-coins/
 
 // The probability and alias tables.
@@ -452,70 +457,60 @@ struct VoseTables {
     std::vector<U> m_probability{};
     std::vector<T> m_alias{};
     explicit VoseTables ( T const n_ ) :
-        m_probability ( static_cast<std::size_t> ( n_ ), U{ 0 } ), m_alias ( static_cast<std::size_t> ( n_ ), T{ 0 } ) {
-    }
+        m_probability ( static_cast<std::size_t> ( n_ ), U{ 0 } ), m_alias ( static_cast<std::size_t> ( n_ ), T{ 0 } ) {}
 
     [[nodiscard]] int size ( ) const noexcept { return static_cast<int> ( m_probability.size ( ) ); }
 };
 
+template<typename U>
+[[nodiscard]] U pop ( std::vector<U> & v_ ) noexcept {
+    U const r = v_.back ( );
+    v_.pop_back ( );
+    return r;
+}
+
 template<typename T = int, typename U = float>
 VoseTables<T, U> init ( std::vector<U> const & pset_ ) noexcept {
-
     assert ( pset_.size ( ) > 0u );
-
-    std::vector<U> pset{ pset_ };
-
-    T const n = static_cast<T> ( pset.size ( ) );
-    U const n_rec_sum = U{ static_cast<float> ( n ) } / std::reduce ( std::execution::par_unseq, std::begin ( pset ), std::end ( pset ) );
-    std::for_each ( std::execution::par_unseq, std::begin ( pset ), std::end ( pset ),
-                    [n_rec_sum]( U & v ) { return v *= n_rec_sum; } );
-
-    std::vector<int> lrg, sml;
-
-    lrg.reserve ( n );
-    sml.reserve ( n );
-
+    std::vector<U> probability_set{ pset_ };
+    U const n_div_sum = static_cast<U> ( static_cast<double> ( probability_set.size ( ) ) /
+                        std::reduce ( std::execution::par_unseq, std::begin ( probability_set ), std::end ( probability_set ), 0.0,
+                                      []( double const a, double const b ) { return a + b; } ) );
+    std::for_each ( std::execution::par_unseq, std::begin ( probability_set ), std::end ( probability_set ),
+                    [n_div_sum]( U & v ) { return v *= n_div_sum; } );
+    std::vector<int> large, small;
+    large.reserve ( probability_set.size ( ) );
+    small.reserve ( probability_set.size ( ) );
     T i = 0;
-
-    for ( U const p : pset ) {
+    for ( U const p : probability_set ) {
         if ( p >= U{ 1 } )
-            lrg.push_back ( i );
+            large.push_back ( i );
         else
-            sml.push_back ( i );
+            small.push_back ( i );
         ++i;
     }
-
-    VoseTables<T, U> tables ( n );
-
-    while ( lrg.size ( ) and sml.size ( ) ) {
-
-        T const l = sml.back ( );
-        sml.pop_back ( );
-        T const g = lrg.back ( );
-        lrg.pop_back ( );
-
-        tables.m_probability[ l ] = pset [ l ];
-        tables.m_alias[ l ] = g;
-
-        pset[ g ] = ( pset[ g ] + pset[ l ] ) - U{ 1 };
-
-        if ( pset[ g ] >= U{ 1 } )
-            lrg.push_back ( g );
+    VoseTables<T, U> tables ( probability_set.size ( ) );
+    while ( large.size ( ) and small.size ( ) ) {
+        T const g = pop ( large ), l = pop ( small );
+        tables.m_probability[ l ] = probability_set[ l ];
+        tables.m_alias[ l ]       = g;
+        probability_set[ g ]      = ( ( probability_set[ g ] + probability_set[ l ] ) - U{ 1 } );
+        if ( probability_set[ g ] >= U{ 1 } )
+            large.push_back ( g );
         else
-            sml.push_back ( g );
+            small.push_back ( g );
     }
-
-    while ( lrg.size ( ) ) {
-        tables.m_probability[ lrg.back ( ) ] = U{ 1 };
-        lrg.pop_back ( );
-    }
-    while ( sml.size ( ) ) {
-        tables.m_probability[ sml.back ( ) ] = U{ 1 };
-        sml.pop_back ( );
-    }
-
+    while ( large.size ( ) )
+        tables.m_probability[ pop ( large ) ] = U{ 1 };
+    while ( small.size ( ) )
+        tables.m_probability[ pop ( small ) ] = U{ 1 };
     return tables;
 }
+
+#ifdef org_small
+#    define small org_small
+#    undef org_small
+#endif
 
 template<typename T = int, typename U = float>
 int next ( VoseTables<T, U> & dis_ ) {
