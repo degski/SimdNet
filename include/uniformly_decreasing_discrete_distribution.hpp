@@ -57,14 +57,14 @@ struct param_type {
         return table;
     }
 
-    bool operator== ( const param_type & right ) const noexcept { return true; };
-    bool operator!= ( const param_type & right ) const noexcept { return false; };
+    [[nodiscard]] bool operator== ( const param_type & right ) const noexcept { return true; };
+    [[nodiscard]] bool operator!= ( const param_type & right ) const noexcept { return false; };
 
     private:
 
     using SampleTable = std::array<T, Size>;
 
-    static constexpr int Sum = Size % 2 == 0 ? ( ( Size / 2 ) * ( Size + 1 ) ) : ( Size * ( ( Size + 1 ) / 2 ) );
+    static [[nodiscard]] constexpr int Sum = Size % 2 == 0 ? ( ( Size / 2 ) * ( Size + 1 ) ) : ( Size * ( ( Size + 1 ) / 2 ) );
 
     [[nodiscard]] static constexpr SampleTable generate_sample_table ( ) noexcept {
         SampleTable table{};
@@ -79,16 +79,14 @@ struct param_type {
 template<int Size, typename T>
 struct uniformly_decreasing_discrete_distribution : param_type<Size, T> {
 
-    static_assert ( Size > 1, "size should be larger than 1" );
-
-    using result_type = T;
     using param_type = param_type<Size, T>;
+    using result_type = typename param_type::result_type;
 
     // Sample with a linearly decreasing probability.
     // Iff size was 3, the probabilities of the CDF would
     // be 3/6, 5/6, 6/6 (or 3/6, 2/6, 1/6 for the PDF).
     template<typename Generator>
-    result_type operator( ) ( Generator & gen_ ) noexcept {
+    [[nodiscard]] result_type operator( ) ( Generator & gen_ ) noexcept {
         int const i = sax::uniform_int_distribution<int> ( 0, param_type::Sum ) ( gen_ ); // needs uniform bits generator.
         return static_cast<result_type> (
             std::lower_bound ( std::begin ( param_type::m_sample_table ), std::end ( param_type::m_sample_table ), i ) -
