@@ -56,7 +56,7 @@ int dist ( float v_ ) noexcept {
     return a * v_ * v_ + b * v_;
 }
 
-int main ( ) {
+int main5658 ( ) {
 
     Population<4'096 * 8, 39, 24, 5, 4> p;
 
@@ -131,8 +131,8 @@ static void normProbs ( std::vector<std::uint32_t> & probs ) {
         return;
     }
 
-    // figure out the scale
-    again:
+// figure out the scale
+again:
     for ( std::uint32_t i = 0; i < probs.size ( ); i++ )
         scale += ( ( probs[ i ] << shift ) >> 8 );
 
@@ -444,72 +444,109 @@ final class AliasMethod {
 
 #endif
 
+// http://www.keithschwarz.com/darts-dice-coins/
 
-#if 0
-
-template<int Size, typename T = int>
-struct vose_alias {
-
-    static_assert ( Size > 1, "size should be larger than 1" );
-
-    using result_type = T;
-
-    // Sample with a linearly decreasing probability.
-    // Iff size was 3, the probabilities of the CDF would
-    // be 3/6, 5/6, 6/6 (or 3/6, 2/6, 1/6 for the PDF).
-    template<typename Generator>
-    result_type operator( ) ( Generator & gen_ ) noexcept {
-        int const i = sax::uniform_int_distribution<int> ( 0, Sum ) ( gen_ ); // needs uniform bits generator.
-        return static_cast<result_type> ( std::lower_bound ( std::begin ( m_sample_table ), std::end ( m_sample_table ), i ) -
-                                          std::begin ( m_sample_table ) );
+// The probability and alias tables.
+template<typename T = int, typename U = float>
+struct VoseTables {
+    std::vector<U> m_probability{};
+    std::vector<T> m_alias{};
+    explicit VoseTables ( T const n_ ) :
+        m_probability ( static_cast<std::size_t> ( n_ + 1 ), U{ 0 } ), m_alias ( static_cast<std::size_t> ( n_ + 1 ), T{ 0 } ) {
+        m_probability.resize ( static_cast<std::size_t> ( n_ ) );
+        m_alias.resize ( static_cast<std::size_t> ( n_ ) );
     }
 
-    void reset ( ) const noexcept {}
-
-    [[nodiscard]] constexpr result_type min ( ) const noexcept { return result_type{ 0 }; }
-    [[nodiscard]] constexpr result_type max ( ) const noexcept { return result_type{ Size - 1 }; }
-
-    /*
-    [[nodiscard]] std::vector<double> probabilities ( ) const {
-        std::vector<double> table{ Size, 0.0 };
-        for ( T n = Size, i = 0; i < Size; ++i, --n )
-            table[ i ] = static_cast<double> ( n ) / static_cast<double> ( Sum );
-        return table;
-    }
-    */
-
-    private:
-    using SampleTable = std::array<T, Size>;
-
-    static constexpr int Sum = Size % 2 == 0 ? ( ( Size / 2 ) * ( Size + 1 ) ) : ( Size * ( ( Size + 1 ) / 2 ) );
-
-    [[nodiscard]] static constexpr Table generate_sample_tables ( ) noexcept {
-        Tables tables;
-
-
-
-
-        return tables;
-    }
-
-    // The probability and alias tables.
-    struct Tables {
-        std::array<T, Size> m_alias{};
-        std::array<float, Size> m_probability{};
-    }
-
-    static constexpr Tables const m_sample_tables = generate_sample_tables ( );
+    [[nodiscard]] int size ( ) const noexcept { return static_cast<int> ( m_probability.size ( ) ); }
 };
 
-#endif
+template<typename T = int, typename U = float>
+VoseTables<T, U> init ( std::vector<U> const & pset_ ) noexcept {
 
+    assert ( pset_.size ( ) > 0u );
 
+    std::vector<U> pset{ pset_ };
+
+    T const n = static_cast<T> ( pset.size ( ) );
+
+    std::for_each ( std::execution::par_unseq, std::begin ( pset ), std::end ( pset ), [f = static_cast<float>( n )]( U & v ) { return v *= f; } );
+
+    std::vector<int> lrg, sml;
+
+    lrg.reserve ( n );
+    sml.reserve ( n );
+
+    T i = 0;
+
+    for ( auto const p : pset ) {
+        if ( p >= U{ 1 } )
+            lrg.push_back ( i );
+        else
+            sml.push_back ( i );
+        ++i;
+    }
+
+    VoseTables<T, U> tables ( n );
+
+    while ( lrg.size ( ) and sml.size ( ) ) {
+
+        T const l = sml.back ( );
+        sml.pop_back ( );
+        T const g = lrg.back ( );
+        lrg.pop_back ( );
+
+        tables.m_probability[ l ] = pset [ l ];
+        tables.m_alias[ l ] = g;
+
+        pset[ g ] = ( pset[ g ] + pset[ l ] ) - U{ 1 };
+
+        if ( pset[ g ] >= U{ 1 } )
+            lrg.push_back ( g );
+        else
+            sml.push_back ( g );
+    }
+
+    while ( lrg.size ( ) ) {
+        tables.m_probability[ lrg.back ( ) ] = U{ 1 };
+        lrg.pop_back ( );
+    }
+    while ( sml.size ( ) ) {
+        tables.m_probability[ sml.back ( ) ] = U{ 1 };
+        sml.pop_back ( );
+    }
+
+    tables.m_probability.push_back ( tables.m_probability.back ( ) );
+    tables.m_alias.push_back ( tables.m_alias.back ( ) );
+
+    return tables;
+}
+
+template<typename T = int, typename U = float>
+int next ( VoseTables<T, U> & dis_ ) {
+    int const column = sax::uniform_int_distribution<int> ( 0, dis_.size ( ) - 1 ) ( Rng::gen ( ) );
+    return Rng::bernoulli ( dis_.m_probability[ column ] ) ? column : dis_.m_alias[ column ];
+}
+
+int main ( ) {
+
+    auto dis = init ( std::vector<float>{ 10.0f, 20.0f, 30.0f } );
+
+    int buck[ 3 ]{};
+
+    for ( int i = 0; i < 1'000'000; ++i )
+        ++buck[ next ( dis ) ];
+
+    for ( int i = 0; i < 3; ++i )
+        std::cout << buck[ i ] << ' ';
+    std::cout << nl;
+
+    return EXIT_SUCCESS;
+}
 
 /*
 
     f(x) = 255 - a * log ( x + 1 ) with a = 255 / log ( 256 ) ~=~ 46
 
-/*
 
 -fsanitize=address
 

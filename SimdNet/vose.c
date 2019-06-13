@@ -1,6 +1,22 @@
 #include "gp.h"
 
 
+
+typedef struct {
+
+    char * id;
+    __int32 * set;
+
+    float * prob;
+    __int32 * alias;
+
+    float n;
+
+    UT_hash_handle hh;
+
+} vose_t;
+
+
 vose_t *vose_pool = NULL;
 
 

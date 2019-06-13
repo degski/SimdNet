@@ -64,7 +64,7 @@ struct param_type {
 
     using SampleTable = std::array<T, Size>;
 
-    static [[nodiscard]] constexpr int Sum = Size % 2 == 0 ? ( ( Size / 2 ) * ( Size + 1 ) ) : ( Size * ( ( Size + 1 ) / 2 ) );
+    static constexpr int Sum = Size % 2 == 0 ? ( ( Size / 2 ) * ( Size + 1 ) ) : ( Size * ( ( Size + 1 ) / 2 ) );
 
     [[nodiscard]] static constexpr SampleTable generate_sample_table ( ) noexcept {
         SampleTable table{};
