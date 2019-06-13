@@ -478,7 +478,7 @@ VoseTables<T, U> init ( std::vector<U> const & probability_ ) noexcept {
                                       []( double const a, double const b ) { return a + b; } ) );
     std::for_each ( std::execution::par_unseq, std::begin ( probability ), std::end ( probability ),
                     [n_div_sum]( U & v ) { return v *= n_div_sum; } );
-    std::vector<int> large, small;
+    std::vector<T> large, small;
     large.reserve ( probability.size ( ) );
     small.reserve ( probability.size ( ) );
     T i = 0;
