@@ -65,11 +65,10 @@ int main5658 ( ) {
 
 // The probability and alias tables.
 template<typename T = int, typename U = float>
-struct VoseTables {
+struct VoseAliasMethodTables {
     std::vector<U> m_probability{};
     std::vector<T> m_alias{};
-    explicit VoseTables ( std::size_t const n_ ) :
-        m_probability ( n_, U{ 0 } ), m_alias ( n_, T{ 0 } ) {}
+    explicit VoseAliasMethodTables ( std::size_t const n_ ) : m_probability ( n_, U{ 0 } ), m_alias ( n_, T{ 0 } ) {}
 
     [[nodiscard]] int size ( ) const noexcept { return static_cast<int> ( m_probability.size ( ) ); }
 };
@@ -82,35 +81,35 @@ template<typename U>
 }
 
 template<typename T = int, typename U = float>
-VoseTables<T, U> init ( std::vector<U> const & probability_ ) noexcept {
+VoseAliasMethodTables<T, U> init ( std::vector<U> const & probability_ ) noexcept {
     assert ( probability_.size ( ) > 0u );
     std::vector<U> probability{ probability_ };
-    U const n_div_sum = static_cast<U> ( static_cast<double> ( probability.size ( ) ) /
-                        std::reduce ( std::execution::par_unseq, std::begin ( probability ), std::end ( probability ), 0.0,
-                                      []( double const a, double const b ) { return a + b; } ) );
+    U const n_div_sum =
+        static_cast<U> ( static_cast<double> ( probability.size ( ) ) /
+                         std::reduce ( std::execution::par_unseq, std::begin ( probability ), std::end ( probability ), 0.0,
+                                       [] ( double const a, double const b ) { return a + b; } ) );
     std::for_each ( std::execution::par_unseq, std::begin ( probability ), std::end ( probability ),
-                    [n_div_sum]( U & v ) { return v *= n_div_sum; } );
+                    [n_div_sum] ( U & v ) { return v *= n_div_sum; } );
     std::vector<T> large, small;
     large.reserve ( probability.size ( ) );
     small.reserve ( probability.size ( ) );
-    T i = 0;
-    for ( U const p : probability ) {
+    T i = T{ 0 };
+    for ( U const p : probability )
         if ( p >= U{ 1 } )
-            large.push_back ( i );
+            large.push_back ( i++ );
         else
-            small.push_back ( i );
-        ++i;
-    }
-    VoseTables<T, U> tables ( probability.size ( ) );
+            small.push_back ( i++ );
+    VoseAliasMethodTables<T, U> tables ( probability.size ( ) );
     while ( large.size ( ) and small.size ( ) ) {
-        T const g = pop ( large ), l = pop ( small );
+        T g                       = pop ( large );
+        T const l                 = pop ( small );
         tables.m_probability[ l ] = probability[ l ];
         tables.m_alias[ l ]       = g;
-        probability[ g ]      = ( ( probability[ g ] + probability[ l ] ) - U{ 1 } );
+        probability[ g ]          = ( ( probability[ g ] + probability[ l ] ) - U{ 1 } );
         if ( probability[ g ] >= U{ 1 } )
-            large.push_back ( g );
+            large.emplace_back ( std::move ( g ) );
         else
-            small.push_back ( g );
+            small.emplace_back ( std::move ( g ) );
     }
     while ( large.size ( ) )
         tables.m_probability[ pop ( large ) ] = U{ 1 };
@@ -125,21 +124,23 @@ VoseTables<T, U> init ( std::vector<U> const & probability_ ) noexcept {
 #endif
 
 template<typename T = int, typename U = float>
-int next ( VoseTables<T, U> & dis_ ) {
+int next ( VoseAliasMethodTables<T, U> & dis_ ) {
     int const column = sax::uniform_int_distribution<int> ( 0, dis_.size ( ) - 1 ) ( Rng::gen ( ) );
     return Rng::bernoulli ( dis_.m_probability[ column ] ) ? column : dis_.m_alias[ column ];
 }
 
 int main ( ) {
 
-    auto dis = init ( std::vector<float>{ 0.5f, 0.3f, 0.2f } );
+    auto dis = init ( std::vector<float>{ 100.0f, 0.4f, 0.3f, 0.2f, 0.1f } );
 
-    int buck[ 3 ]{};
+    int buck[ 5 ]{};
 
-    for ( int i = 0; i < 1'000'000; ++i )
+
+
+    for ( int i = 0; i < 100'000'000; ++i )
         ++buck[ next ( dis ) ];
 
-    for ( int i = 0; i < 3; ++i )
+    for ( int i = 0; i < 5; ++i )
         std::cout << buck[ i ] << ' ';
     std::cout << nl;
 
@@ -147,9 +148,6 @@ int main ( ) {
 }
 
 /*
-
-    f(x) = 255 - a * log ( x + 1 ) with a = 255 / log ( 256 ) ~=~ 46
-
 
 -fsanitize=address
 
