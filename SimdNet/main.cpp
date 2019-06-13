@@ -463,7 +463,7 @@ struct VoseTables {
 };
 
 template<typename U>
-[[nodiscard]] U pop ( std::vector<U> & v_ ) noexcept {
+[[nodiscard]] inline U pop ( std::vector<U> & v_ ) noexcept {
     U const r = v_.back ( );
     v_.pop_back ( );
     return r;
