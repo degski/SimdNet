@@ -452,9 +452,7 @@ struct VoseTables {
     std::vector<U> m_probability{};
     std::vector<T> m_alias{};
     explicit VoseTables ( T const n_ ) :
-        m_probability ( static_cast<std::size_t> ( n_ + 1 ), U{ 0 } ), m_alias ( static_cast<std::size_t> ( n_ + 1 ), T{ 0 } ) {
-        m_probability.resize ( static_cast<std::size_t> ( n_ ) );
-        m_alias.resize ( static_cast<std::size_t> ( n_ ) );
+        m_probability ( static_cast<std::size_t> ( n_ ), U{ 0 } ), m_alias ( static_cast<std::size_t> ( n_ ), T{ 0 } ) {
     }
 
     [[nodiscard]] int size ( ) const noexcept { return static_cast<int> ( m_probability.size ( ) ); }
@@ -468,8 +466,8 @@ VoseTables<T, U> init ( std::vector<U> const & pset_ ) noexcept {
     std::vector<U> pset{ pset_ };
 
     T const n = static_cast<T> ( pset.size ( ) );
-
-    std::for_each ( std::execution::par_unseq, std::begin ( pset ), std::end ( pset ), [f = static_cast<float>( n )]( U & v ) { return v *= f; } );
+    U const sum = std::reduce ( std::execution::par_unseq, std::begin ( pset ), std::end ( pset ) );
+    std::for_each ( std::execution::par_unseq, std::begin ( pset ), std::end ( pset ), [ n, sum ]( U & v ) { return v = v / sum * n; } );
 
     std::vector<int> lrg, sml;
 
@@ -478,7 +476,7 @@ VoseTables<T, U> init ( std::vector<U> const & pset_ ) noexcept {
 
     T i = 0;
 
-    for ( auto const p : pset ) {
+    for ( U const p : pset ) {
         if ( p >= U{ 1 } )
             lrg.push_back ( i );
         else
@@ -515,9 +513,6 @@ VoseTables<T, U> init ( std::vector<U> const & pset_ ) noexcept {
         sml.pop_back ( );
     }
 
-    tables.m_probability.push_back ( tables.m_probability.back ( ) );
-    tables.m_alias.push_back ( tables.m_alias.back ( ) );
-
     return tables;
 }
 
@@ -529,7 +524,7 @@ int next ( VoseTables<T, U> & dis_ ) {
 
 int main ( ) {
 
-    auto dis = init ( std::vector<float>{ 10.0f, 20.0f, 30.0f } );
+    auto dis = init ( std::vector<float>{ 5.0f, 0.3f, 0.2f } );
 
     int buck[ 3 ]{};
 
