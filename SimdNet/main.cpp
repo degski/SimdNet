@@ -466,8 +466,9 @@ VoseTables<T, U> init ( std::vector<U> const & pset_ ) noexcept {
     std::vector<U> pset{ pset_ };
 
     T const n = static_cast<T> ( pset.size ( ) );
-    U const sum = std::reduce ( std::execution::par_unseq, std::begin ( pset ), std::end ( pset ) );
-    std::for_each ( std::execution::par_unseq, std::begin ( pset ), std::end ( pset ), [ n, sum ]( U & v ) { return v = v / sum * n; } );
+    U const n_rec_sum = U{ static_cast<float> ( n ) } / std::reduce ( std::execution::par_unseq, std::begin ( pset ), std::end ( pset ) );
+    std::for_each ( std::execution::par_unseq, std::begin ( pset ), std::end ( pset ),
+                    [n_rec_sum]( U & v ) { return v *= n_rec_sum; } );
 
     std::vector<int> lrg, sml;
 
