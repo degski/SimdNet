@@ -470,32 +470,32 @@ template<typename U>
 }
 
 template<typename T = int, typename U = float>
-VoseTables<T, U> init ( std::vector<U> const & pset_ ) noexcept {
-    assert ( pset_.size ( ) > 0u );
-    std::vector<U> probability_set{ pset_ };
-    U const n_div_sum = static_cast<U> ( static_cast<double> ( probability_set.size ( ) ) /
-                        std::reduce ( std::execution::par_unseq, std::begin ( probability_set ), std::end ( probability_set ), 0.0,
+VoseTables<T, U> init ( std::vector<U> const & probability_ ) noexcept {
+    assert ( probability_.size ( ) > 0u );
+    std::vector<U> probability{ probability_ };
+    U const n_div_sum = static_cast<U> ( static_cast<double> ( probability.size ( ) ) /
+                        std::reduce ( std::execution::par_unseq, std::begin ( probability ), std::end ( probability ), 0.0,
                                       []( double const a, double const b ) { return a + b; } ) );
-    std::for_each ( std::execution::par_unseq, std::begin ( probability_set ), std::end ( probability_set ),
+    std::for_each ( std::execution::par_unseq, std::begin ( probability ), std::end ( probability ),
                     [n_div_sum]( U & v ) { return v *= n_div_sum; } );
     std::vector<int> large, small;
-    large.reserve ( probability_set.size ( ) );
-    small.reserve ( probability_set.size ( ) );
+    large.reserve ( probability.size ( ) );
+    small.reserve ( probability.size ( ) );
     T i = 0;
-    for ( U const p : probability_set ) {
+    for ( U const p : probability ) {
         if ( p >= U{ 1 } )
             large.push_back ( i );
         else
             small.push_back ( i );
         ++i;
     }
-    VoseTables<T, U> tables ( probability_set.size ( ) );
+    VoseTables<T, U> tables ( probability.size ( ) );
     while ( large.size ( ) and small.size ( ) ) {
         T const g = pop ( large ), l = pop ( small );
-        tables.m_probability[ l ] = probability_set[ l ];
+        tables.m_probability[ l ] = probability[ l ];
         tables.m_alias[ l ]       = g;
-        probability_set[ g ]      = ( ( probability_set[ g ] + probability_set[ l ] ) - U{ 1 } );
-        if ( probability_set[ g ] >= U{ 1 } )
+        probability[ g ]      = ( ( probability[ g ] + probability[ l ] ) - U{ 1 } );
+        if ( probability[ g ] >= U{ 1 } )
             large.push_back ( g );
         else
             small.push_back ( g );
