@@ -25,6 +25,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <sstream>
 #include <string>
 
 namespace fs = std::filesystem;
@@ -85,4 +86,8 @@ std::string get_timestamp ( ) noexcept;
 
 void sleep_for_milliseconds ( std::int32_t const milliseconds_ ) noexcept;
 
-void clear_screen ( ) noexcept;
+void cls ( ) noexcept;
+// x is the column, y is the row. The origin (0,0) is top-left.
+void set_cursor_position ( int x_, int y_ ) noexcept;
+
+void write_buffer ( std::wostringstream const & outbuf_ ) noexcept;
