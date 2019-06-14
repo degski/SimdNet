@@ -117,6 +117,11 @@ struct SnakeSpace {
         return std::find ( std::cbegin ( m_snake_body ), std::cend ( m_snake_body ), p_ ) != std::cend ( m_snake_body );
     }
 
+    [[nodiscard]] inline bool snake_body_crossing ( ) const noexcept {
+        return std::find ( std::cbegin ( m_snake_body ) + 1, std::cend ( m_snake_body ), m_snake_body.front ( ) ) !=
+               std::cend ( m_snake_body );
+    }
+
     [[nodiscard]] inline bool valid_empty_point ( Point const & p_ ) const noexcept {
         return in_range ( p_ ) and not snake_body_contains ( p_ );
     }
@@ -154,7 +159,7 @@ struct SnakeSpace {
         ++m_move_count;
         --m_energy;
         m_snake_body.emplace_front ( extend_head ( ) );
-        if ( not m_energy or not in_range ( m_snake_body.front ( ) ) ) {
+        if ( not m_energy or not in_range ( m_snake_body.front ( ) ) or snake_body_crossing ( ) ) {
             return false;
         }
         else if ( m_snake_body.front ( ) != m_food ) {
@@ -232,7 +237,7 @@ struct SnakeSpace {
             change_direction ( decide_direction (
                 brain_->feed_forward ( work_area.data ( ) ) ) ); // Run the data and decide where to go, and change direction.
             print_update ( );
-            sleep_for_milliseconds ( 50 );
+            sleep_for_milliseconds ( 25 );
         }
     }
 
