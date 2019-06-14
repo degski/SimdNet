@@ -216,7 +216,7 @@ struct SnakeSpace {
     [[nodiscard]] float run ( TheBrain * const brain_ ) noexcept {
         static thread_local WorkArea work_area;
         float r = 0.0f;
-        for ( int i = 0; i < 3; ++i ) {
+        for ( int i = 0; i < 5; ++i ) {
             init_run ( );
             while ( move ( ) ) {                  // As long as not dead.
                 distances ( work_area.data ( ) ); // Observe the environment.
@@ -225,7 +225,7 @@ struct SnakeSpace {
             }                                                                           // and change direction.
             r += static_cast<float> ( m_snake_body.size ( ) );
         }
-        return r / 3.0f;
+        return r / 5.0f;
     }
 
     void run_display ( TheBrain * const brain_ ) noexcept {

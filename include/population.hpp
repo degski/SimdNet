@@ -166,6 +166,14 @@ struct Population {
                static_cast<float> ( BreedSize );
     }
 
+    void print_statistics ( ) const noexcept {
+        float const af = average_fitness ( );
+        float const aa = average_age ( );
+        std::wcout << L" generation " << std::setw ( 6 ) << m_generation << L" fitness " << std::setprecision ( 2 ) << std::fixed
+                   << std::setw ( 7 ) << m_population[ 0 ].fitness << L" " << m_population[ 0 ].age << " (" << std::setw ( 7 ) << af
+                   << L" " << aa << ")" << nl;
+    }
+
     void run ( ) noexcept {
         bool once = true;
         while ( true ) {
@@ -176,20 +184,12 @@ struct Population {
                     cls ( );
                     once = false;
                 }
+                print_statistics ( );
                 SnakeSpace snake_space;
                 snake_space.run_display ( m_population[ 0 ].id );
-                float const af = average_fitness ( );
-                float const aa = average_age ( );
-                std::wcout << L" generation " << std::setw ( 6 ) << m_generation << L" fitness " << std::setprecision ( 2 )
-                           << std::fixed << std::setw ( 7 ) << m_population[ 0 ].fitness << L" " << m_population[ 0 ].age << " ("
-                           << std::setw ( 7 ) << af << L" " << aa << ")" << nl;
             }
             else {
-                float const af = average_fitness ( );
-                float const aa = average_age ( );
-                std::wcout << L" generation " << std::setw ( 6 ) << m_generation << L" fitness " << std::setprecision ( 2 )
-                           << std::fixed << std::setw ( 7 ) << m_population[ 0 ].fitness << L" " << m_population[ 0 ].age << " ("
-                           << std::setw ( 7 ) << af << L" " << aa << ")" << nl;
+                print_statistics ( );
             }
             reproduce ( );
         }
