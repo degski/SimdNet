@@ -186,7 +186,7 @@ struct SnakeSpace {
         m_changes.old_head = m_snake_body.front ( );
         m_snake_body.emplace_front ( extend_head ( ) );
         m_changes.new_head = m_snake_body.front ( );
-        if ( not m_energy or not in_range ( m_snake_body.front ( ) ) ) {
+        if ( not m_energy or not in_range ( m_snake_body.front ( ) ) or snake_body_crossing ( ) ) {
             return false;
         }
         else if ( m_snake_body.front ( ) != m_food ) {
@@ -215,17 +215,19 @@ struct SnakeSpace {
     // Return the fitness of the network.
     [[nodiscard]] float run ( TheBrain * const brain_ ) noexcept {
         static thread_local WorkArea work_area;
-        float r = 0.0f;
-        for ( int i = 0; i < 10; ++i ) {
+        constexpr int s = 7;
+        std::array<int, static_cast<std::size_t> ( s )> r;
+        for ( int i = 0; i < s; ++i ) {
             init_run ( );
             while ( move ( ) ) {                  // As long as not dead.
                 distances ( work_area.data ( ) ); // Observe the environment.
                 change_direction (
                     decide_direction ( brain_->feed_forward ( work_area.data ( ) ) ) ); // Run the data and decide where to go,
             }                                                                           // and change direction.
-            r += static_cast<float> ( m_snake_body.size ( ) );
+            r [ i ] = m_snake_body.size ( );
         }
-        return r / 10.0f;
+        std::sort ( std::begin ( r ), std::end ( r ) );
+        return ( r[ 2 ] + r[ 3 ] + r[ 4 ] ) / 3.0f;
     }
 
     void run_display ( TheBrain * const brain_ ) noexcept {

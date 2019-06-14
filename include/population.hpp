@@ -179,7 +179,7 @@ struct Population {
         while ( true ) {
             evaluate ( );
             ++m_generation;
-            if ( m_generation > 100 ) {
+            if ( m_generation > 500 ) {
                 if ( once ) {
                     cls ( );
                     once = false;
