@@ -169,12 +169,16 @@ struct Population {
     void run ( ) noexcept {
         while ( true ) {
             evaluate ( );
-            float const af = average_fitness ( );
-            float const aa = average_age ( );
-            //std::wcout << m_population[ 0 ].fitness << L' ' << m_population[ 0 ].age << L' ' << af << L' ' << aa << nl;
-            std::wcout << L" generation " << std::setw ( 6 ) << ++m_generation << L" fitness " << std::setprecision ( 2 )
-                       << std::fixed << std::setw ( 7 ) << m_population[ 0 ].fitness << L" " << m_population[ 0 ].age << " ("
-                       << std::setw ( 7 ) << af << L" " << aa << ")" << nl;
+            ++m_generation;
+            if ( m_generation > 0 ) {
+                SnakeSpace snake_space;
+                snake_space.run_display ( m_population[ 0 ].id );
+                float const af = average_fitness ( );
+                float const aa = average_age ( );
+                std::wcout << L" generation " << std::setw ( 6 ) << m_generation << L" fitness " << std::setprecision ( 2 )
+                           << std::fixed << std::setw ( 7 ) << m_population[ 0 ].fitness << L" " << m_population[ 0 ].age << " ("
+                           << std::setw ( 7 ) << af << L" " << aa << ")" << nl;
+            }
             reproduce ( );
         }
     }

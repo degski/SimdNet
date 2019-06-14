@@ -26,8 +26,10 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include <chrono>
 #include <filesystem>
 #include <string>
+#include <thread>
 
 namespace fs = std::filesystem;
 
@@ -70,4 +72,19 @@ std::string get_timestamp ( ) noexcept {
     std::snprintf ( buffer, 32, "%4i%02i%02i%02i%02i%02i", ptm.tm_year + 1900, ptm.tm_mon + 1, ptm.tm_mday, ptm.tm_hour, ptm.tm_min,
                ptm.tm_sec );
     return { buffer };
+}
+
+void sleep_for_milliseconds ( std::int32_t const milliseconds_ ) noexcept {
+    std::this_thread::sleep_for ( std::chrono::milliseconds ( milliseconds_ ) );
+}
+
+void clear_screen ( ) noexcept {
+    static COORD tl = { 0, 0 };
+    //static CONSOLE_SCREEN_BUFFER_INFO s;
+    static HANDLE console = GetStdHandle ( STD_OUTPUT_HANDLE );
+    //GetConsoleScreenBufferInfo ( console, &s );
+    //static DWORD written, cells = s.dwSize.X * s.dwSize.Y;
+    //FillConsoleOutputCharacter ( console, L' ', cells, tl, &written );
+    //FillConsoleOutputAttribute ( console, s.wAttributes, cells, tl, &written );
+    SetConsoleCursorPosition ( console, tl );
 }

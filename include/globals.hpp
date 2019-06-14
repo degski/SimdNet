@@ -82,3 +82,7 @@ void load_from_file_xml ( T & t_, fs::path && path_, std::string && file_name_ )
 
 std::string get_timestamp_utc ( ) noexcept;
 std::string get_timestamp ( ) noexcept;
+
+void sleep_for_milliseconds ( std::int32_t const milliseconds_ ) noexcept;
+
+void clear_screen ( ) noexcept;

@@ -161,7 +161,7 @@ struct SnakeSpace {
             m_snake_body.pop_back ( );
         }
         else {
-            m_energy += 100;
+            m_energy = 100;
             random_food ( );
         }
         return true;
@@ -187,6 +187,23 @@ struct SnakeSpace {
                 decide_direction ( brain_->feed_forward ( work_area.data ( ) ) ) ); // Run the data and decide where to go,
         }                                                                           // and change direction.
         return static_cast<float> ( m_snake_body.size ( ) );
+    }
+
+    void run_display ( TheBrain * const brain_ ) noexcept {
+        static thread_local WorkArea work_area;
+        init_run ( );
+        clear_screen ( );
+        print ( );
+        while ( move ( ) ) {                  // As long as not dead.
+            distances ( work_area.data ( ) ); // Observe the environment.
+            change_direction (
+                decide_direction ( brain_->feed_forward ( work_area.data ( ) ) ) ); // Run the data and decide where to go, and change direction.
+            clear_screen ( );
+            print ( );
+            sleep_for_milliseconds ( 10 );
+        }
+        // std::wcout << L"body length " << m_snake_body.size ( ) << nl << nl;
+        std::wcout << L"\n\n";
     }
 
     private:
@@ -248,16 +265,21 @@ struct SnakeSpace {
             for ( int x = -FieldRadius; x <= FieldRadius; ++x ) {
                 Point const p{ static_cast<char> ( x ), static_cast<char> ( y ) };
                 if ( p == m_food )
-                    std::wcout << L" o ";
+                    // std::wcout << L" o ";
+                    std::wprintf ( L" o " );
                 else if ( snake_body_contains ( p ) )
                     if ( p == m_snake_body.front ( ) )
-                        std::wcout << L" x ";
+                        // std::wcout << L" x ";
+                        std::wprintf ( L" x " );
                     else
-                        std::wcout << L" s ";
+                        // std::wcout << L" s ";
+                        std::wprintf ( L" s " );
                 else
-                    std::wcout << L" . ";
+                    // std::wcout << L" . ";
+                    std::wprintf ( L" . " );
             }
-            std::wcout << nl;
+            // std::wcout << nl;
+            std::wprintf ( L"\n" );
         }
     }
 

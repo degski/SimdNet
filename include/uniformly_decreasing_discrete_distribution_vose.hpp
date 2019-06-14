@@ -75,13 +75,6 @@ struct param_type {
 
     constexpr param_type ( ) noexcept = default;
 
-    [[nodiscard]] std::vector<double> probabilities ( ) const {
-        std::vector<double> table{ Size, 0.0 };
-        for ( T n = Size, i = 0; i < Size; ++i, --n )
-            table[ i ] = static_cast<double> ( n ) / static_cast<double> ( Sum );
-        return table;
-    }
-
     [[nodiscard]] bool operator== ( const param_type & right ) const noexcept { return true; };
     [[nodiscard]] bool operator!= ( const param_type & right ) const noexcept { return false; };
 
