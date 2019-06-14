@@ -117,6 +117,7 @@ struct SnakeSpace {
         return std::find ( std::cbegin ( m_snake_body ), std::cend ( m_snake_body ), p_ ) != std::cend ( m_snake_body );
     }
 
+    // Does the head is at the same position as any of the body parts.
     [[nodiscard]] inline bool snake_body_crossing ( ) const noexcept {
         return std::find ( std::cbegin ( m_snake_body ) + 1, std::cend ( m_snake_body ), m_snake_body.front ( ) ) !=
                std::cend ( m_snake_body );
