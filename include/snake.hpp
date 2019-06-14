@@ -56,6 +56,7 @@ template<typename Popper, typename T, size_t N>
 #include <sax/uniform_int_distribution.hpp>
 
 #include "fcc.hpp"
+#include "globals.hpp"
 #include "rng.hpp"
 
 struct Point {
@@ -106,8 +107,7 @@ struct SnakeSpace {
     using TheBrain = FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>;
     using WorkArea = InputBiasOutput<NumInput, NumNeurons, NumOutput>;
 
-    SnakeSpace ( ) noexcept :
-        m_snake_body{ make_ring_span<nonstd::null_popper<Point>> ( m_snake_body_data ) } { }
+    SnakeSpace ( ) noexcept : m_snake_body{ make_ring_span<nonstd::null_popper<Point>> ( m_snake_body_data ) } {}
 
     [[nodiscard]] inline bool in_range ( Point const & p_ ) const noexcept {
         return p_.x >= -FieldRadius and p_.y >= -FieldRadius and p_.x <= FieldRadius and p_.y <= FieldRadius;
@@ -161,7 +161,36 @@ struct SnakeSpace {
             m_snake_body.pop_back ( );
         }
         else {
-            m_energy += 100;
+            m_energy += 50;
+            random_food ( );
+        }
+        return true;
+    }
+
+    struct Changes {
+        Point old_head, new_head;
+        bool has_eaten;
+        Point old_tail;
+    };
+
+    // Returns the dead/alive status.
+    bool move_display ( ) noexcept {
+        ++m_move_count;
+        --m_energy;
+        m_changes.old_head = m_snake_body.front ( );
+        m_snake_body.emplace_front ( extend_head ( ) );
+        m_changes.new_head = m_snake_body.front ( );
+        if ( not m_energy or not in_range ( m_snake_body.front ( ) ) ) {
+            return false;
+        }
+        else if ( m_snake_body.front ( ) != m_food ) {
+            m_changes.has_eaten = false;
+            m_changes.old_tail = m_snake_body.back ( );
+            m_snake_body.pop_back ( );
+        }
+        else {
+            m_changes.has_eaten = true;
+            m_energy += 50;
             random_food ( );
         }
         return true;
@@ -198,13 +227,12 @@ struct SnakeSpace {
         init_run ( );
         set_cursor_position ( 0, 0 );
         print ( );
-        while ( move ( ) ) {                  // As long as not dead.
+        while ( move_display ( ) ) {          // As long as not dead.
             distances ( work_area.data ( ) ); // Observe the environment.
-            change_direction (
-                decide_direction ( brain_->feed_forward ( work_area.data ( ) ) ) ); // Run the data and decide where to go, and change direction.
-            set_cursor_position ( 0, 0 );
-            print ( );
-            sleep_for_milliseconds ( 10 );
+            change_direction ( decide_direction (
+                brain_->feed_forward ( work_area.data ( ) ) ) ); // Run the data and decide where to go, and change direction.
+            print_update ( );
+            sleep_for_milliseconds ( 50 );
         }
     }
 
@@ -239,7 +267,7 @@ struct SnakeSpace {
     // Input (activation) for distances to food.
     void distances_to_food ( pointer dist_ ) const noexcept {
         auto const [ dir, val ] = distance_point_to_point ( m_snake_body.front ( ), m_food );
-        dist_[ dir ]      = val;
+        dist_[ dir ]            = val;
     }
 
     // Input (activation) for distances to body.
@@ -267,23 +295,34 @@ struct SnakeSpace {
             for ( int x = -FieldRadius; x <= FieldRadius; ++x ) {
                 Point const p{ static_cast<char> ( x ), static_cast<char> ( y ) };
                 if ( p == m_food )
-                    // std::wcout << L" o ";
                     std::wprintf ( L" o " );
                 else if ( snake_body_contains ( p ) )
                     if ( p == m_snake_body.front ( ) )
-                        // std::wcout << L" x ";
                         std::wprintf ( L" x " );
                     else
-                        // std::wcout << L" s ";
                         std::wprintf ( L" s " );
                 else
-                    // std::wcout << L" . ";
                     std::wprintf ( L" . " );
             }
-            // std::wcout << nl;
             std::wprintf ( L"\n" );
         }
         std::wprintf ( L"\n" );
+    }
+
+    void print_update ( ) const noexcept {
+        set_cursor_position ( ( m_changes.new_head.x + FieldRadius ) * 3, m_changes.new_head.y + FieldRadius );
+        std::wprintf ( L" s " );
+        set_cursor_position ( ( m_changes.old_head.x + FieldRadius ) * 3, m_changes.old_head.y + FieldRadius );
+        std::wprintf ( L" x " );
+        if ( m_changes.has_eaten ) {
+            set_cursor_position ( ( m_food.x + FieldRadius ) * 3, m_food.y + FieldRadius );
+            std::wprintf ( L" o " );
+        }
+        else {
+            set_cursor_position ( ( m_changes.old_tail.x + FieldRadius ) * 3, m_changes.old_tail.y + FieldRadius );
+            std::wprintf ( L" . " );
+        }
+        set_cursor_position ( 1, FieldSize + 2 );
     }
 
     int m_move_count, m_energy;
@@ -291,4 +330,5 @@ struct SnakeSpace {
     std::array<Point, 384> m_snake_body_data;
     SnakeBody m_snake_body;
     Point m_food;
+    Changes m_changes;
 };
