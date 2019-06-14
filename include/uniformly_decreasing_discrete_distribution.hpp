@@ -30,7 +30,6 @@
 
 #include <algorithm>
 #include <array>
-#include <vector>
 
 #include <sax/uniform_int_distribution.hpp>
 

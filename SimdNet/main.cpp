@@ -47,7 +47,7 @@
 
 #include "population.hpp"
 
-int main5658 ( ) {
+int main ( ) {
 
     Population<4'096 * 8, 39, 24, 5, 4> p;
 
@@ -55,6 +55,9 @@ int main5658 ( ) {
 
     return EXIT_SUCCESS;
 }
+
+
+#if  0
 
 #ifdef small
 #    define org_small small
@@ -159,3 +162,5 @@ C:\Program Files\LLVM\lib\clang\9.0.0\lib\windows\clang_rt.asan-preinit-x86_64.l
 C:\Program Files\LLVM\lib\clang\9.0.0\lib\windows\clang_rt.asan-x86_64.lib
 
 */
+
+#endif

@@ -30,9 +30,30 @@
 
 #include <algorithm>
 #include <array>
-#include <vector>
+
+#include <experimental/fixed_capacity_vector>
 
 #include <sax/uniform_int_distribution.hpp>
+
+#ifdef small
+#    define org_small small
+#    undef small
+#endif
+
+template<int Size, typename T = int, typename U = float>
+struct VoseAliasMethodTables {
+    std::array<U, Size> m_probability{};
+    std::array<T, Size> m_alias{};
+
+    [[nodiscard]] int size ( ) const noexcept { return static_cast<int> ( m_probability.size ( ) ); }
+};
+
+template<typename T, std::size_t Size>
+[[nodiscard]] inline constexpr T pop ( std::experimental::fixed_capacity_vector<T, Size> & v_ ) noexcept {
+    T const r = v_.back ( );
+    v_.pop_back ( );
+    return r;
+}
 
 template<int Size, typename T = int>
 struct uniformly_decreasing_discrete_distribution;
@@ -62,18 +83,43 @@ struct param_type {
 
     private:
 
-    using SampleTable = std::array<T, Size>;
+    using VoseAliasMethodTables = VoseAliasMethodTables<Size, T>;
+    using FloatVector = std::experimental::fixed_capacity_vector<float, Size>;
+    using IntVector = std::experimental::fixed_capacity_vector<int, Size>;
 
     static constexpr int Sum = Size % 2 == 0 ? ( ( Size / 2 ) * ( Size + 1 ) ) : ( Size * ( ( Size + 1 ) / 2 ) );
 
-    [[nodiscard]] static constexpr SampleTable generate_sample_table ( ) noexcept {
-        SampleTable table{};
-        for ( T n = Size, i = 0, c = n; i < Size; ++i, c += --n )
-            table[ i ] = c;
-        return table;
+    [[nodiscard]] static constexpr VoseAliasMethodTables generate_sample_table ( ) noexcept {
+        FloatVector probability;
+        for ( int i = Size; i > 0; --i )
+            probability.emplace_back ( static_cast<float> ( i ) / static_cast<float> ( Sum ) );
+        IntVector large, small;
+        T i = T{ 0 };
+        for ( float const p : probability )
+            if ( p >= 1.0f )
+                large.push_back ( i++ );
+            else
+                small.push_back ( i++ );
+        VoseAliasMethodTables tables;
+        while ( large.size ( ) and small.size ( ) ) {
+            T g                       = pop ( large );
+            T const l                 = pop ( small );
+            tables.m_probability[ l ] = probability[ l ];
+            tables.m_alias[ l ]       = g;
+            probability[ g ]         = ( ( probability[ g ] + probability[ l ] ) - 1.0f );
+            if ( probability[ g ] >= 1.0f )
+                large.emplace_back ( std::move ( g ) );
+            else
+                small.emplace_back ( std::move ( g ) );
+        }
+        while ( large.size ( ) )
+            tables.m_probability[ pop ( large ) ] = 1.0f;
+        while ( small.size ( ) )
+            tables.m_probability[ pop ( small ) ] = 1.0f;
+        return tables;
     }
 
-    static constexpr SampleTable const m_sample_table = generate_sample_table ( );
+    static constexpr VoseAliasMethodTables const m_sample_table = generate_sample_table ( );
 };
 
 template<int Size, typename T>
@@ -87,10 +133,10 @@ struct uniformly_decreasing_discrete_distribution : param_type<Size, T> {
     // be 3/6, 5/6, 6/6 (or 3/6, 2/6, 1/6 for the PDF).
     template<typename Generator>
     [[nodiscard]] result_type operator( ) ( Generator & gen_ ) noexcept {
-        int const i = sax::uniform_int_distribution<int> ( 0, param_type::Sum ) ( gen_ ); // needs uniform bits generator.
-        return static_cast<result_type> (
-            std::lower_bound ( std::begin ( param_type::m_sample_table ), std::end ( param_type::m_sample_table ), i ) -
-            std::begin ( param_type::m_sample_table ) );
+        int const column = sax::uniform_int_distribution<int> ( min ( ), max ( ) ) ( gen_ );
+        return std::bernoulli_distribution ( param_type::m_sample_table.m_probability[ column ] ) ( gen_ )
+                   ? column
+                   : param_type::m_sample_table.m_alias[ column ];
     }
 
     void reset ( ) const noexcept {}
@@ -98,3 +144,8 @@ struct uniformly_decreasing_discrete_distribution : param_type<Size, T> {
     [[nodiscard]] constexpr result_type min ( ) const noexcept { return result_type{ 0 }; }
     [[nodiscard]] constexpr result_type max ( ) const noexcept { return result_type{ Size - 1 }; }
 };
+
+#ifdef org_small
+#    define small org_small
+#    undef org_small
+#endif

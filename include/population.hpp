@@ -48,7 +48,7 @@
 #include "globals.hpp"
 #include "rng.hpp"
 #include "snake.hpp"
-#include "uniformly_decreasing_discrete_distribution.hpp"
+#include "uniformly_decreasing_discrete_distribution_vose.hpp"
 
 #include <plf/plf_nanotimer.h>
 
