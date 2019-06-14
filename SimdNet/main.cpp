@@ -56,13 +56,12 @@ int main ( ) {
     return EXIT_SUCCESS;
 }
 
+#if 0
 
-#if  0
-
-#ifdef small
-#    define org_small small
-#    undef small
-#endif
+#    ifdef small
+#        define org_small small
+#        undef small
+#    endif
 
 // http://www.keithschwarz.com/darts-dice-coins/
 
@@ -126,10 +125,10 @@ VoseAliasMethodTables<T, U> init ( std::vector<U> const & probability_ ) {
     return init_impl ( probability );
 }
 
-#ifdef org_small
-#    define small org_small
-#    undef org_small
-#endif
+#    ifdef org_small
+#        define small org_small
+#        undef org_small
+#    endif
 
 template<typename T = int, typename U = float>
 int next ( VoseAliasMethodTables<T, U> & dis_ ) {

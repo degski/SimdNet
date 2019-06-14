@@ -40,6 +40,8 @@
 #    undef small
 #endif
 
+namespace detail {
+
 template<int Size, typename T = int, typename U = float>
 struct VoseAliasMethodTables {
     std::array<U, Size> m_probability{};
@@ -54,6 +56,8 @@ template<typename T, std::size_t Size>
     v_.pop_back ( );
     return r;
 }
+
+} // namespace detail
 
 template<int Size, typename T = int>
 struct uniformly_decreasing_discrete_distribution;
@@ -83,7 +87,7 @@ struct param_type {
 
     private:
 
-    using VoseAliasMethodTables = VoseAliasMethodTables<Size, T>;
+    using VoseAliasMethodTables = detail::VoseAliasMethodTables<Size, T>;
     using FloatVector = std::experimental::fixed_capacity_vector<float, Size>;
     using IntVector = std::experimental::fixed_capacity_vector<int, Size>;
 
@@ -91,7 +95,7 @@ struct param_type {
 
     [[nodiscard]] static constexpr VoseAliasMethodTables generate_sample_table ( ) noexcept {
         FloatVector probability;
-        for ( int i = Size; i > 0; --i )
+        for ( std::int64_t i = Size * Size; i > 0; i -= Size )
             probability.emplace_back ( static_cast<float> ( i ) / static_cast<float> ( Sum ) );
         IntVector large, small;
         T i = T{ 0 };
@@ -102,8 +106,8 @@ struct param_type {
                 small.push_back ( i++ );
         VoseAliasMethodTables tables;
         while ( large.size ( ) and small.size ( ) ) {
-            T g                       = pop ( large );
-            T const l                 = pop ( small );
+            T g                       = detail::pop ( large );
+            T const l                 = detail::pop ( small );
             tables.m_probability[ l ] = probability[ l ];
             tables.m_alias[ l ]       = g;
             probability[ g ]         = ( ( probability[ g ] + probability[ l ] ) - 1.0f );
@@ -113,9 +117,9 @@ struct param_type {
                 small.emplace_back ( std::move ( g ) );
         }
         while ( large.size ( ) )
-            tables.m_probability[ pop ( large ) ] = 1.0f;
+            tables.m_probability[ detail::pop ( large ) ] = 1.0f;
         while ( small.size ( ) )
-            tables.m_probability[ pop ( small ) ] = 1.0f;
+            tables.m_probability[ detail::pop ( small ) ] = 1.0f;
         return tables;
     }
 
