@@ -81,7 +81,7 @@ template<typename U>
 }
 
 template<typename T = int, typename U = float>
-VoseAliasMethodTables<T, U> init_impl ( std::vector<U> & probability_ ) noexcept {
+VoseAliasMethodTables<T, U> init_impl ( std::vector<U> & probability_ ) {
     std::vector<T> large, small;
     large.reserve ( probability_.size ( ) );
     small.reserve ( probability_.size ( ) );
@@ -111,7 +111,7 @@ VoseAliasMethodTables<T, U> init_impl ( std::vector<U> & probability_ ) noexcept
 }
 
 template<typename T = int, typename U = float>
-VoseAliasMethodTables<T, U> init ( std::vector<U> const & probability_ ) noexcept {
+VoseAliasMethodTables<T, U> init ( std::vector<U> const & probability_ ) {
     assert ( probability_.size ( ) > 0u );
     std::vector<U> probability{ probability_ };
     U const n_div_sum =
