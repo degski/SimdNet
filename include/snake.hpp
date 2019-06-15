@@ -335,14 +335,14 @@ struct SnakeSpace {
             for ( int x = -FieldRadius; x <= FieldRadius; ++x ) {
                 Point const p{ static_cast<char> ( x ), static_cast<char> ( y ) };
                 if ( p == m_food )
-                    std::wprintf ( L" o " );
+                    std::wprintf ( L" \u25B2 " );
                 else if ( snake_body_contains ( p ) )
                     if ( p == m_snake_body.front ( ) )
-                        std::wprintf ( L" x " );
+                        std::wprintf ( L" \u25A0 " );
                     else
-                        std::wprintf ( L" s " );
+                        std::wprintf ( L" \u25A1 " );
                 else
-                    std::wprintf ( L" . " );
+                    std::wprintf ( L" \u00B7 " );
             }
             std::wprintf ( L"\n" );
         }
@@ -351,16 +351,16 @@ struct SnakeSpace {
 
     void print_update ( ) const noexcept {
         set_cursor_position ( ( m_changes.new_head.x + FieldRadius ) * 3 + 1, m_changes.new_head.y + FieldRadius );
-        std::putwchar ( L's' );
+        std::putwchar ( L'\u25A0' );
         set_cursor_position ( ( m_changes.old_head.x + FieldRadius ) * 3 + 1, m_changes.old_head.y + FieldRadius );
-        std::putwchar ( L'x' );
+        std::putwchar ( L'\u25A1' );
         if ( m_changes.has_eaten ) {
             set_cursor_position ( ( m_food.x + FieldRadius ) * 3 + 1, m_food.y + FieldRadius );
-            std::putwchar ( L'o' );
+            std::putwchar ( L'\u25B2' );
         }
         else {
             set_cursor_position ( ( m_changes.old_tail.x + FieldRadius ) * 3 + 1, m_changes.old_tail.y + FieldRadius );
-            std::putwchar ( L'.' );
+            std::putwchar ( L'\u00B7' );
         }
         set_cursor_position ( 1, FieldSize + 2 );
     }

@@ -24,6 +24,9 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
+#include <fcntl.h>
+#include <io.h>
+
 #include <cstdio>
 #include <cstdlib>
 
@@ -126,8 +129,11 @@ void write_buffer ( std::wostringstream const & outbuf_ ) noexcept {
     WriteConsoleOutputCharacter ( hOut, outbuf_.str ( ).c_str ( ), outbuf_.str ( ).length ( ), topLeft, &dwCharsWritten );
 }
 
+void set_mode_unicode ( ) noexcept { _setmode ( _fileno ( stdout ), _O_U16TEXT ); }
+
 bool hide_cursor ( ) noexcept {
     static HANDLE const hOut = GetStdHandle ( STD_OUTPUT_HANDLE );
     static CONSOLE_CURSOR_INFO const info{ 1, false };
+    set_mode_unicode ( );
     return SetConsoleCursorInfo ( hOut, &info );
 }
