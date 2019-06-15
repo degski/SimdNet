@@ -84,7 +84,7 @@ struct Point {
 
 template<int B>
 [[nodiscard]] Point random_point ( ) noexcept {
-    auto idx = [] ( ) noexcept { return static_cast<char> ( sax::uniform_int_distribution<int>{ -B, B }( Rng::gen ( ) ) ); };
+    auto idx = []( ) noexcept { return static_cast<char> ( sax::uniform_int_distribution<int>{ -B, B }( Rng::gen ( ) ) ); };
     return { idx ( ), idx ( ) };
 }
 
@@ -117,9 +117,9 @@ struct SnakeSpace {
         return std::find ( std::cbegin ( m_snake_body ), std::cend ( m_snake_body ), p_ ) != std::cend ( m_snake_body );
     }
 
-    // Does the head is at the same position as any of the body parts.
-    [[nodiscard]] inline bool snake_body_crossing ( ) const noexcept {
-        return std::find ( std::cbegin ( m_snake_body ) + 1, std::cend ( m_snake_body ), m_snake_body.front ( ) ) !=
+    // Returns whether the head is at the same position as any of the body parts.
+    [[nodiscard]] inline bool snake_body_not_crossing ( ) const noexcept {
+        return std::find ( std::cbegin ( m_snake_body ) + 1, std::cend ( m_snake_body ), m_snake_body.front ( ) ) ==
                std::cend ( m_snake_body );
     }
 
@@ -155,8 +155,8 @@ struct SnakeSpace {
         return { 0, 0 };
     }
 
-    [[nodiscard]] bool is_dead ( ) const noexcept {
-        return not m_energy or not in_range ( m_snake_body.front ( ) ) or snake_body_crossing ( );
+    [[nodiscard]] inline bool is_not_dead ( ) const noexcept {
+        return m_energy and in_range ( m_snake_body.front ( ) ) and snake_body_not_crossing ( );
     }
 
     // Returns the dead/alive status.
@@ -164,17 +164,18 @@ struct SnakeSpace {
         ++m_move_count;
         --m_energy;
         m_snake_body.emplace_front ( extend_head ( ) );
-        if ( is_dead ( ) ) {
-            return false;
+        if ( is_not_dead ( ) ) {
+            if ( m_snake_body.front ( ) != m_food ) {
+                m_snake_body.pop_back ( );
+                return true;
+            }
+            else {
+                m_energy += EnerygyTopUp;
+                random_food ( );
+                return true;
+            }
         }
-        else if ( m_snake_body.front ( ) != m_food ) {
-            m_snake_body.pop_back ( );
-        }
-        else {
-            m_energy += 50;
-            random_food ( );
-        }
-        return true;
+        return false;
     }
 
     struct Changes {
@@ -184,26 +185,27 @@ struct SnakeSpace {
     };
 
     // Returns the dead/alive status.
-    bool move_display ( ) noexcept {
+    bool move ( ) noexcept {
         ++m_move_count;
         --m_energy;
         m_changes.old_head = m_snake_body.front ( );
         m_snake_body.emplace_front ( extend_head ( ) );
         m_changes.new_head = m_snake_body.front ( );
-        if ( is_dead ( ) ) {
-            return false;
+        if ( is_not_dead ( ) ) {
+            if ( m_snake_body.front ( ) != m_food ) {
+                m_changes.has_eaten = false;
+                m_changes.old_tail  = m_snake_body.back ( );
+                m_snake_body.pop_back ( );
+                return true;
+            }
+            else {
+                m_changes.has_eaten = true;
+                m_energy += EnerygyTopUp;
+                random_food ( );
+                return true;
+            }
         }
-        else if ( m_snake_body.front ( ) != m_food ) {
-            m_changes.has_eaten = false;
-            m_changes.old_tail  = m_snake_body.back ( );
-            m_snake_body.pop_back ( );
-        }
-        else {
-            m_changes.has_eaten = true;
-            m_energy += 100;
-            random_food ( );
-        }
-        return true;
+        return false;
     }
 
     [[nodiscard]] inline int decide_direction ( const_pointer o_ ) const noexcept {
@@ -359,6 +361,8 @@ struct SnakeSpace {
         }
         set_cursor_position ( 1, FieldSize + 2 );
     }
+
+    constexpr int EnerygyTopUp = 100;
 
     int m_move_count, m_energy;
     MoveDirection m_direction;
