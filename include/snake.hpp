@@ -159,7 +159,7 @@ struct SnakeSpace {
         return m_energy and in_range ( m_snake_body.front ( ) ) and snake_body_not_crossing ( );
     }
 
-    // Returns the dead/alive status.
+    // Returns the dead(false)/alive(true) status.
     bool move ( ) noexcept {
         ++m_move_count;
         --m_energy;
@@ -170,7 +170,7 @@ struct SnakeSpace {
                 return true;
             }
             else {
-                m_energy += EnerygyTopUp;
+                m_energy += EnergyTopUp;
                 random_food ( );
                 return true;
             }
@@ -184,8 +184,8 @@ struct SnakeSpace {
         Point old_tail;
     };
 
-    // Returns the dead/alive status.
-    bool move ( ) noexcept {
+    // Returns the dead(false)/alive(true) status.
+    bool move_display ( ) noexcept {
         ++m_move_count;
         --m_energy;
         m_changes.old_head = m_snake_body.front ( );
@@ -200,7 +200,7 @@ struct SnakeSpace {
             }
             else {
                 m_changes.has_eaten = true;
-                m_energy += EnerygyTopUp;
+                m_energy += EnergyTopUp;
                 random_food ( );
                 return true;
             }
@@ -362,7 +362,7 @@ struct SnakeSpace {
         set_cursor_position ( 1, FieldSize + 2 );
     }
 
-    constexpr int EnerygyTopUp = 100;
+    static constexpr int EnergyTopUp = 100;
 
     int m_move_count, m_energy;
     MoveDirection m_direction;
