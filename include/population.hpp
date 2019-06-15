@@ -117,11 +117,11 @@ struct Population {
 
     void mutate ( TheBrain * const c_ ) noexcept {
         static uniformly_decreasing_discrete_distribution<10> dis;
-        int m = dis ( Rng::gen ( ) );
+        int rep = dis ( Rng::gen ( ) );
         do {
             int const mup = std::uniform_int_distribution<int> ( 0, TheBrain::NumWeights - 1 ) ( Rng::gen ( ) ); // mutation point.
             ( *c_ )[ mup ] += std::normal_distribution<float> ( 0.0f, 0.25f ) ( Rng::gen ( ) );
-        } while ( m-- );
+        } while ( rep-- );
     }
 
     void crossover ( std::tuple<TheBrain const &, TheBrain const &> p_, TheBrain * const c_ ) noexcept {
@@ -183,14 +183,14 @@ struct Population {
         while ( true ) {
             evaluate ( );
             ++m_generation;
-            if ( m_generation > 250 ) {
+            if ( m_generation > 100 ) {
                 if ( once ) {
                     cls ( );
                     once = false;
                 }
-                print_statistics ( );
                 SnakeSpace snake_space;
                 snake_space.run_display ( m_population[ 0 ].id );
+                print_statistics ( );
             }
             else {
                 print_statistics ( );
