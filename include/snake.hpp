@@ -317,6 +317,8 @@ struct SnakeSpace {
         }
     }
 
+    void encode_energy ( pointer data_ ) const noexcept { data_[ 0 ] = 1.0f / ( 1.0f + m_energy ); }
+
     public:
     void gather_input ( pointer d_ ) const noexcept {
         distances_to_wall ( d_ );
@@ -324,6 +326,7 @@ struct SnakeSpace {
         distances_to_food ( d_ + 8 );
         distances_to_body ( d_ + 16 );
         encode_current_direction ( d_ + 24 );
+        encode_energy ( d_ + 26 );
     }
 
     void print ( ) const noexcept {
