@@ -30,9 +30,9 @@
 
 namespace fs = std::filesystem;
 
-#include <cereal/cereal.hpp>
 #include <cereal/archives/binary.hpp>
 #include <cereal/archives/xml.hpp>
+#include <cereal/cereal.hpp>
 
 extern fs::path const & g_app_data_path;
 extern fs::path const & g_app_path;
@@ -81,8 +81,8 @@ void load_from_file_xml ( T & t_, fs::path && path_, std::string && file_name_ )
     istream.close ( );
 }
 
-std::string get_timestamp_utc ( ) noexcept;
-std::string get_timestamp ( ) noexcept;
+[[nodiscard]] std::string get_timestamp_utc ( ) noexcept;
+[[nodiscard]] std::string get_timestamp ( ) noexcept;
 
 void sleep_for_milliseconds ( std::int32_t const milliseconds_ ) noexcept;
 
@@ -91,3 +91,5 @@ void cls ( ) noexcept;
 void set_cursor_position ( int x_, int y_ ) noexcept;
 
 void write_buffer ( std::wostringstream const & outbuf_ ) noexcept;
+
+[[nodiscard]] bool hide_cursor ( ) noexcept;

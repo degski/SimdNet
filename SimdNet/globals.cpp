@@ -125,3 +125,9 @@ void write_buffer ( std::wostringstream const & outbuf_ ) noexcept {
     // don't. I'm not 100% sure about this one, the documentation doesn't say.
     WriteConsoleOutputCharacter ( hOut, outbuf_.str ( ).c_str ( ), outbuf_.str ( ).length ( ), topLeft, &dwCharsWritten );
 }
+
+bool hide_cursor ( ) noexcept {
+    static HANDLE const hOut = GetStdHandle ( STD_OUTPUT_HANDLE );
+    static CONSOLE_CURSOR_INFO const info{ 1, false };
+    return SetConsoleCursorInfo ( hOut, &info );
+}

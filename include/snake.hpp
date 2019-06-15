@@ -195,7 +195,7 @@ struct SnakeSpace {
         }
         else if ( m_snake_body.front ( ) != m_food ) {
             m_changes.has_eaten = false;
-            m_changes.old_tail = m_snake_body.back ( );
+            m_changes.old_tail  = m_snake_body.back ( );
             m_snake_body.pop_back ( );
         }
         else {
@@ -223,12 +223,12 @@ struct SnakeSpace {
         std::array<int, static_cast<std::size_t> ( s )> r;
         for ( int i = 0; i < s; ++i ) {
             init_run ( );
-            while ( move ( ) ) {                  // As long as not dead.
-                distances ( work_area.data ( ) ); // Observe the environment.
+            while ( move ( ) ) {                     // As long as not dead.
+                gather_input ( work_area.data ( ) ); // Observe the environment.
                 change_direction (
                     decide_direction ( brain_->feed_forward ( work_area.data ( ) ) ) ); // Run the data and decide where to go,
             }                                                                           // and change direction.
-            r [ i ] = m_snake_body.size ( );
+            r[ i ] = m_snake_body.size ( );
         }
         std::sort ( std::begin ( r ), std::end ( r ) );
         return ( r[ 2 ] + r[ 3 ] + r[ 4 ] ) / 3.0f;
@@ -239,8 +239,8 @@ struct SnakeSpace {
         init_run ( );
         set_cursor_position ( 0, 0 );
         print ( );
-        while ( move_display ( ) ) {          // As long as not dead.
-            distances ( work_area.data ( ) ); // Observe the environment.
+        while ( move_display ( ) ) {             // As long as not dead.
+            gather_input ( work_area.data ( ) ); // Observe the environment.
             change_direction ( decide_direction (
                 brain_->feed_forward ( work_area.data ( ) ) ) ); // Run the data and decide where to go, and change direction.
             print_update ( );
@@ -264,45 +264,68 @@ struct SnakeSpace {
     }
 
     // Input (activation) for distances to wall.
-    void distances_to_wall ( pointer dist_ ) const noexcept {
+    void distances_to_wall ( pointer data_ ) const noexcept {
         Point const & head = m_snake_body.front ( );
-        dist_[ 0 ]         = 1.0f / ( FieldRadius - head.y + 1 );
-        dist_[ 1 ]         = 1.0f / ( 2 * std::min ( FieldRadius - head.x, FieldRadius - head.y ) + 1 );
-        dist_[ 2 ]         = 1.0f / ( FieldRadius - head.x + 1 );
-        dist_[ 3 ]         = 1.0f / ( 2 * std::min ( FieldRadius - head.x, FieldRadius + head.y ) + 1 );
-        dist_[ 4 ]         = 1.0f / ( FieldRadius + head.y + 1 );
-        dist_[ 5 ]         = 1.0f / ( 2 * std::min ( FieldRadius + head.x, FieldRadius + head.y ) + 1 );
-        dist_[ 6 ]         = 1.0f / ( FieldRadius + head.x + 1 );
-        dist_[ 7 ]         = 1.0f / ( 2 * std::min ( FieldRadius + head.x, FieldRadius - head.y ) + 1 );
+        data_[ 0 ]         = 1.0f / ( FieldRadius - head.y + 1 );
+        data_[ 1 ]         = 1.0f / ( 2 * std::min ( FieldRadius - head.x, FieldRadius - head.y ) + 1 );
+        data_[ 2 ]         = 1.0f / ( FieldRadius - head.x + 1 );
+        data_[ 3 ]         = 1.0f / ( 2 * std::min ( FieldRadius - head.x, FieldRadius + head.y ) + 1 );
+        data_[ 4 ]         = 1.0f / ( FieldRadius + head.y + 1 );
+        data_[ 5 ]         = 1.0f / ( 2 * std::min ( FieldRadius + head.x, FieldRadius + head.y ) + 1 );
+        data_[ 6 ]         = 1.0f / ( FieldRadius + head.x + 1 );
+        data_[ 7 ]         = 1.0f / ( 2 * std::min ( FieldRadius + head.x, FieldRadius - head.y ) + 1 );
     }
 
     // Input (activation) for distances to food.
-    void distances_to_food ( pointer dist_ ) const noexcept {
+    void distances_to_food ( pointer data_ ) const noexcept {
         auto const [ dir, val ] = distance_point_to_point ( m_snake_body.front ( ), m_food );
-        dist_[ dir ]            = val;
+        data_[ dir ]            = val;
     }
 
     // Input (activation) for distances to body.
-    void distances_to_body ( pointer dist_ ) const noexcept {
+    void distances_to_body ( pointer data_ ) const noexcept {
         Point const & head = m_snake_body.front ( );
         auto const end     = std::end ( m_snake_body );
         auto it            = std::begin ( m_snake_body ); // This assumes the length of the snake is at least 2.
         while ( ++it != end ) {
             auto const [ dir, val ] = distance_point_to_point ( head, *it );
-            if ( val > dist_[ dir ] )
-                dist_[ dir ] = val;
+            if ( val > data_[ dir ] )
+                data_[ dir ] = val;
+        }
+    }
+
+    void encode_current_direction ( pointer data_ ) const noexcept {
+        switch ( m_direction ) {
+            case MoveDirection::no:
+                data_[ 0 ] = +1.0f;
+                data_[ 1 ] = +0.0f;
+                break;
+            case MoveDirection::ea:
+                data_[ 0 ] = +0.0f;
+                data_[ 1 ] = +1.0f;
+                break;
+            case MoveDirection::so:
+                data_[ 0 ] = -1.0f;
+                data_[ 1 ] = +0.0f;
+                break;
+            case MoveDirection::we:
+                data_[ 0 ] = +0.0f;
+                data_[ 1 ] = -1.0f;
+                break;
         }
     }
 
     public:
-    void distances ( pointer d_ ) const noexcept {
+    void gather_input ( pointer d_ ) const noexcept {
         distances_to_wall ( d_ );
         std::memset ( d_ + 8, 0, 16 * sizeof ( float ) );
         distances_to_food ( d_ + 8 );
         distances_to_body ( d_ + 16 );
+        encode_current_direction ( d_ + 24 );
     }
 
     void print ( ) const noexcept {
+        static bool _ = hide_cursor ( ); // Call only once.
         for ( int y = -FieldRadius; y <= FieldRadius; ++y ) {
             for ( int x = -FieldRadius; x <= FieldRadius; ++x ) {
                 Point const p{ static_cast<char> ( x ), static_cast<char> ( y ) };
