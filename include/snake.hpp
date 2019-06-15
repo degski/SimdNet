@@ -155,12 +155,16 @@ struct SnakeSpace {
         return { 0, 0 };
     }
 
+    [[nodiscard]] bool is_dead ( ) const noexcept {
+        return not m_energy or not in_range ( m_snake_body.front ( ) ) or snake_body_crossing ( );
+    }
+
     // Returns the dead/alive status.
     bool move ( ) noexcept {
         ++m_move_count;
         --m_energy;
         m_snake_body.emplace_front ( extend_head ( ) );
-        if ( not m_energy or not in_range ( m_snake_body.front ( ) ) or snake_body_crossing ( ) ) {
+        if ( is_dead ( ) ) {
             return false;
         }
         else if ( m_snake_body.front ( ) != m_food ) {
@@ -186,7 +190,7 @@ struct SnakeSpace {
         m_changes.old_head = m_snake_body.front ( );
         m_snake_body.emplace_front ( extend_head ( ) );
         m_changes.new_head = m_snake_body.front ( );
-        if ( not m_energy or not in_range ( m_snake_body.front ( ) ) or snake_body_crossing ( ) ) {
+        if ( is_dead ( ) ) {
             return false;
         }
         else if ( m_snake_body.front ( ) != m_food ) {
@@ -318,17 +322,17 @@ struct SnakeSpace {
     }
 
     void print_update ( ) const noexcept {
-        set_cursor_position ( ( m_changes.new_head.x + FieldRadius ) * 3, m_changes.new_head.y + FieldRadius );
-        std::wprintf ( L" s " );
-        set_cursor_position ( ( m_changes.old_head.x + FieldRadius ) * 3, m_changes.old_head.y + FieldRadius );
-        std::wprintf ( L" x " );
+        set_cursor_position ( ( m_changes.new_head.x + FieldRadius ) * 3 + 1, m_changes.new_head.y + FieldRadius );
+        std::putwchar ( L's' );
+        set_cursor_position ( ( m_changes.old_head.x + FieldRadius ) * 3 + 1, m_changes.old_head.y + FieldRadius );
+        std::putwchar ( L'x' );
         if ( m_changes.has_eaten ) {
-            set_cursor_position ( ( m_food.x + FieldRadius ) * 3, m_food.y + FieldRadius );
-            std::wprintf ( L" o " );
+            set_cursor_position ( ( m_food.x + FieldRadius ) * 3 + 1, m_food.y + FieldRadius );
+            std::putwchar ( L'o' );
         }
         else {
-            set_cursor_position ( ( m_changes.old_tail.x + FieldRadius ) * 3, m_changes.old_tail.y + FieldRadius );
-            std::wprintf ( L" . " );
+            set_cursor_position ( ( m_changes.old_tail.x + FieldRadius ) * 3 + 1, m_changes.old_tail.y + FieldRadius );
+            std::putwchar ( L'.' );
         }
         set_cursor_position ( 1, FieldSize + 2 );
     }

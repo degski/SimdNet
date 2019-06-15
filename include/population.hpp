@@ -55,7 +55,7 @@
 template<int PopSize, int FieldSize, int NumInput, int NumNeurons, int NumOutput>
 struct Population {
 
-    static constexpr int BreedSize = PopSize / 2;
+    static constexpr int BreedSize = PopSize / 4;
 
     using TheBrain   = FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>;
     using SnakeSpace = SnakeSpace<FieldSize, NumInput, NumNeurons, NumOutput>;
@@ -179,7 +179,7 @@ struct Population {
         while ( true ) {
             evaluate ( );
             ++m_generation;
-            if ( m_generation > 500 ) {
+            if ( m_generation > 0 ) {
                 if ( once ) {
                     cls ( );
                     once = false;
