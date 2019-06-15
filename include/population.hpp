@@ -55,7 +55,7 @@
 template<int PopSize, int FieldSize, int NumInput, int NumNeurons, int NumOutput>
 struct Population {
 
-    static constexpr int BreedSize = PopSize / 4;
+    static constexpr int BreedSize = PopSize / 8;
 
     using TheBrain   = FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>;
     using SnakeSpace = SnakeSpace<FieldSize, NumInput, NumNeurons, NumOutput>;
@@ -134,7 +134,7 @@ struct Population {
         std::for_each ( std::execution::par_unseq, std::begin ( m_population ) + BreedSize,
                         std::end ( m_population ), [this]( Individual & i ) noexcept {
                             crossover ( random_couple ( ), i.id );
-                            if ( Rng::bernoulli ( 0.05 ) )
+                            if ( Rng::bernoulli ( 0.1 ) )
                                 mutate ( i.id );
                             i.fitness = 0.0f;
                             i.age     = 0;
@@ -183,7 +183,7 @@ struct Population {
         while ( true ) {
             evaluate ( );
             ++m_generation;
-            if ( m_generation > 100 ) {
+            if ( m_generation > 200 ) {
                 if ( once ) {
                     cls ( );
                     once = false;

@@ -221,7 +221,7 @@ struct SnakeSpace {
     // Return the fitness of the network.
     [[nodiscard]] float run ( TheBrain * const brain_ ) noexcept {
         static thread_local WorkArea work_area;
-        constexpr int s = 7;
+        constexpr int s = 5;
         std::array<int, static_cast<std::size_t> ( s )> r;
         for ( int i = 0; i < s; ++i ) {
             init_run ( );
@@ -233,7 +233,7 @@ struct SnakeSpace {
             r[ i ] = m_snake_body.size ( );
         }
         std::sort ( std::begin ( r ), std::end ( r ) );
-        return ( r[ 2 ] + r[ 3 ] + r[ 4 ] ) / 3.0f;
+        return ( r[ 1 ] + r[ 2 ] + r[ 3 ] ) / 3.0f;
     }
 
     void run_display ( TheBrain * const brain_ ) noexcept {
