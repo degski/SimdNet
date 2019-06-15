@@ -116,8 +116,12 @@ struct Population {
     }
 
     void mutate ( TheBrain * const c_ ) noexcept {
-        int const mup = std::uniform_int_distribution<int> ( 0, TheBrain::NumWeights - 1 ) ( Rng::gen ( ) ); // mutation point.
-        ( *c_ )[ mup ] += std::normal_distribution<float> ( 0.0f, 1.0f ) ( Rng::gen ( ) );
+        static uniformly_decreasing_discrete_distribution<10> dis;
+        int m = dis ( Rng::gen ( ) );
+        do {
+            int const mup = std::uniform_int_distribution<int> ( 0, TheBrain::NumWeights - 1 ) ( Rng::gen ( ) ); // mutation point.
+            ( *c_ )[ mup ] += std::normal_distribution<float> ( 0.0f, 0.25f ) ( Rng::gen ( ) );
+        } while ( m-- );
     }
 
     void crossover ( std::tuple<TheBrain const &, TheBrain const &> p_, TheBrain * const c_ ) noexcept {
@@ -179,7 +183,7 @@ struct Population {
         while ( true ) {
             evaluate ( );
             ++m_generation;
-            if ( m_generation > 0 ) {
+            if ( m_generation > 250 ) {
                 if ( once ) {
                     cls ( );
                     once = false;
