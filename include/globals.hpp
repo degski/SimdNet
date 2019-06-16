@@ -30,9 +30,10 @@
 
 namespace fs = std::filesystem;
 
+#include <cereal/cereal.hpp>
 #include <cereal/archives/binary.hpp>
 #include <cereal/archives/xml.hpp>
-#include <cereal/cereal.hpp>
+#include <cereal/archives/json.hpp>
 
 extern fs::path const & g_app_data_path;
 extern fs::path const & g_app_path;
@@ -60,23 +61,24 @@ void load_from_file_bin ( T & t_, fs::path && path_, std::string && file_name_ )
 }
 
 template<typename T>
-void save_to_file_xml ( T const & t_, fs::path && path_, std::string && file_name_, bool const append_ = false ) noexcept {
+void save_to_file_xml ( std::string && object_name_, T const & t_, fs::path && path_, std::string && file_name_,
+                        bool const append_ = false ) noexcept {
     std::ofstream ostream ( path_ / ( file_name_ + std::string ( ".xmlcereal" ) ),
                             append_ ? std::ios::app | std::ios::out : std::ios::out );
     {
         cereal::XMLOutputArchive archive ( ostream );
-        archive ( t_ );
+        archive ( cereal::make_nvp ( object_name_, t_ ) );
     }
     ostream.flush ( );
     ostream.close ( );
 }
 
 template<typename T>
-void load_from_file_xml ( T & t_, fs::path && path_, std::string && file_name_ ) noexcept {
+void load_from_file_xml ( std::string && object_name_, T & t_, fs::path && path_, std::string && file_name_ ) noexcept {
     std::ifstream istream ( path_ / ( file_name_ + std::string ( ".xmlcereal" ) ) );
     {
         cereal::XMLInputArchive archive ( istream );
-        archive ( t_ );
+        archive ( cereal::make_nvp ( object_name_, t_ ) );
     }
     istream.close ( );
 }

@@ -41,8 +41,6 @@
 #include <sax/uniform_int_distribution.hpp>
 
 #include <cereal/cereal.hpp>
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/json.hpp>
 #include <cereal/types/vector.hpp>
 
 #include "fcc.hpp"
@@ -63,8 +61,8 @@ struct ConfigParams {
 
     template<class Archive>
     void serialize ( Archive & ar_ ) {
-        ar_ ( cereal::make_nvp ( "display_match", display_match ) );
-        ar_ ( cereal::make_nvp ( "save_population", save_population ) );
+        ar_ ( CEREAL_NVP ( display_match ) );
+        ar_ ( CEREAL_NVP ( save_population ) );
     }
 };
 
