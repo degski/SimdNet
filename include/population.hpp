@@ -77,8 +77,11 @@ struct Config final {
         return params;
     }
 
-    static void load ( ) noexcept { load_from_file_json ( "config", instance ( ), "z://tmp", "config" ); }
-    static void save ( ) noexcept { save_to_file_json ( "config", instance ( ), "z://tmp", "config" ); }
+    static void load ( ) noexcept { load_from_file_json ( s_name, instance ( ), s_file ); }
+    static void save ( ) noexcept { save_to_file_json ( s_name, instance ( ), s_file ); }
+
+    static constexpr char const s_file[]{ "z://tmp//config.json" };
+    static constexpr char const s_name[]{ "config" };
 };
 
 template<int PopSize, int FieldSize, int NumInput, int NumNeurons, int NumOutput>
