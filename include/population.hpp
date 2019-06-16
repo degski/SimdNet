@@ -51,7 +51,6 @@
 
 #include <plf/plf_nanotimer.h>
 
-
 struct ConfigParams {
     bool display_match;
     bool save_population;
@@ -93,8 +92,8 @@ struct Population {
     struct Individual {
 
         float fitness;
-        int age = 0;
-        TheBrain * id;
+        int age       = 0;
+        TheBrain * id = nullptr;
 
         [[nodiscard]] bool operator== ( Individual const & rhs_ ) const noexcept { return rhs_.id == id; }
         [[nodiscard]] bool operator!= ( Individual const & rhs_ ) const noexcept { return not operator== ( rhs_ ); }
@@ -119,30 +118,36 @@ struct Population {
         void load ( Archive & ar_ ) {
             ar_ ( fitness );
             ar_ ( age );
-            id = new TheBrain ( );
+            if ( nullptr == id )
+                id = new TheBrain ( );
             ar_ ( *id );
         }
     };
 
     Population ( ) {
         Config::load ( );
-        std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
-                        []( Individual & i ) { i.id = new TheBrain ( ); } );
+        std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ), [] ( Individual & i ) {
+            if ( nullptr == i.id )
+                i.id = new TheBrain ( );
+        } );
     }
 
     ~Population ( ) noexcept {
         std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
-                        []( Individual & i ) noexcept { delete i.id; } );
+                        [] ( Individual & i ) noexcept {
+                            delete i.id;
+                            i.id = nullptr;
+                        } );
     }
 
     void evaluate ( ) noexcept {
         static thread_local SnakeSpace snake_space;
         std::for_each (
-            std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ), []( Individual & i ) noexcept {
+            std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ), [] ( Individual & i ) noexcept {
                 i.fitness += ( ( snake_space.run ( i.id ) - i.fitness ) / static_cast<float> ( ++i.age ) ); // Maintain the average.
             } );
         std::sort ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
-                    []( Individual const & a, Individual const & b ) noexcept { return a.fitness > b.fitness; } );
+                    [] ( Individual const & a, Individual const & b ) noexcept { return a.fitness > b.fitness; } );
         if ( Config::instance ( ).save_population )
             save ( );
     }
@@ -163,8 +168,8 @@ struct Population {
     }
 
     void reproduce ( ) noexcept {
-        std::for_each ( std::execution::par_unseq, std::begin ( m_population ) + BreedSize,
-                        std::end ( m_population ), [this]( Individual & i ) noexcept {
+        std::for_each ( std::execution::par_unseq, std::begin ( m_population ) + BreedSize, std::end ( m_population ),
+                        [this] ( Individual & i ) noexcept {
                             crossover ( random_couple ( ), i.id );
                             if ( Rng::bernoulli ( 0.1 ) )
                                 mutate ( i.id );
@@ -175,7 +180,7 @@ struct Population {
 
     [[nodiscard]] static int sample ( ) noexcept { return uniformly_decreasing_discrete_distribution<BreedSize>{}( Rng::gen ( ) ); }
     [[nodiscard]] static std::tuple<int, int> sample_match ( ) noexcept {
-        auto g                 = []( ) noexcept { return uniformly_decreasing_discrete_distribution<BreedSize>{}( Rng::gen ( ) ); };
+        auto g = [] ( ) noexcept { return uniformly_decreasing_discrete_distribution<BreedSize>{}( Rng::gen ( ) ); };
         std::tuple<int, int> r = { g ( ), g ( ) };
         while ( std::get<0> ( r ) == std::get<1> ( r ) )
             std::get<1> ( r ) = g ( );
@@ -191,14 +196,14 @@ struct Population {
     [[nodiscard]] float average_fitness ( ) const noexcept {
         return std::transform_reduce ( std::execution::par_unseq, std::begin ( m_population ),
                                        std::begin ( m_population ) + BreedSize, 0.0f, std::plus<> ( ),
-                                       []( Individual const & i ) noexcept { return i.fitness; } ) /
+                                       [] ( Individual const & i ) noexcept { return i.fitness; } ) /
                static_cast<float> ( BreedSize );
     }
 
     [[nodiscard]] float average_age ( ) const noexcept {
         return static_cast<float> ( std::transform_reduce ( std::execution::par_unseq, std::begin ( m_population ),
                                                             std::begin ( m_population ) + BreedSize, 0, std::plus<> ( ),
-                                                            []( Individual const & i ) noexcept { return i.age; } ) ) /
+                                                            [] ( Individual const & i ) noexcept { return i.age; } ) ) /
                static_cast<float> ( BreedSize );
     }
 
