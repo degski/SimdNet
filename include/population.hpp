@@ -79,6 +79,9 @@ struct Config final {
         static ConfigParams params;
         return params;
     }
+
+    static void load ( ) noexcept { load_from_file_json ( "config", instance ( ), "z://tmp", "config" ); }
+    static void save ( ) noexcept { save_to_file_json ( "config", instance ( ), "z://tmp", "config" ); }
 };
 
 template<int PopSize, int FieldSize, int NumInput, int NumNeurons, int NumOutput>
@@ -124,7 +127,7 @@ struct Population {
     };
 
     Population ( ) {
-        load_from_file_json ( "config", Config::instance ( ), "z://tmp", "config" );
+        Config::load ( );
         std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
                         []( Individual & i ) { i.id = new TheBrain ( ); } );
     }
@@ -143,7 +146,7 @@ struct Population {
         std::sort ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
                     []( Individual const & a, Individual const & b ) noexcept { return a.fitness > b.fitness; } );
         if ( Config::instance ( ).save_population )
-            save_to_file_bin ( *this, "z://tmp", "population" );
+            save ( );
     }
 
     void mutate ( TheBrain * const c_ ) noexcept {
@@ -212,7 +215,7 @@ struct Population {
     void run ( ) noexcept {
         bool once = true;
         while ( true ) {
-            load_from_file_json ( "config", Config::instance ( ), "z://tmp", "config" );
+            Config::load ( );
             evaluate ( );
             ++m_generation;
             if ( Config::instance ( ).display_match ) {
@@ -239,6 +242,9 @@ struct Population {
         ar_ ( m_population );
         ar_ ( m_generation );
     }
+
+    void load ( ) noexcept { load_from_file_bin ( *this, "z://tmp", "population" ); }
+    void save ( ) const noexcept { save_to_file_bin ( *this, "z://tmp", "population" ); }
 
     std::vector<Individual> m_population{ PopSize };
     int m_generation = 0;
