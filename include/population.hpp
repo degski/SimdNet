@@ -40,8 +40,9 @@
 
 #include <sax/uniform_int_distribution.hpp>
 
-#include <cereal/archives/binary.hpp>
 #include <cereal/cereal.hpp>
+#include <cereal/archives/binary.hpp>
+#include <cereal/archives/json.hpp>
 #include <cereal/types/vector.hpp>
 
 #include "fcc.hpp"
@@ -52,10 +53,38 @@
 
 #include <plf/plf_nanotimer.h>
 
+
+struct ConfigParams {
+    bool display_match;
+    bool save_population;
+
+    private:
+    friend class cereal::access;
+
+    template<class Archive>
+    void serialize ( Archive & ar_ ) {
+        ar_ ( cereal::make_nvp ( "display_match", display_match ) );
+        ar_ ( cereal::make_nvp ( "save_population", save_population ) );
+    }
+};
+
+struct Config final {
+    Config ( Config && )      = delete;
+    Config ( Config const & ) = delete;
+
+    Config & operator= ( Config && ) = delete;
+    Config & operator= ( Config const & ) = delete;
+
+    [[nodiscard]] static ConfigParams & instance ( ) noexcept {
+        static ConfigParams params;
+        return params;
+    }
+};
+
 template<int PopSize, int FieldSize, int NumInput, int NumNeurons, int NumOutput>
 struct Population {
 
-    static constexpr int BreedSize = PopSize / 8;
+    static constexpr int BreedSize = PopSize / 4;
 
     using TheBrain   = FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>;
     using SnakeSpace = SnakeSpace<FieldSize, NumInput, NumNeurons, NumOutput>;
@@ -95,6 +124,7 @@ struct Population {
     };
 
     Population ( ) {
+        load_from_file_json ( "config", Config::instance ( ), "z://tmp", "config" );
         std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
                         []( Individual & i ) { i.id = new TheBrain ( ); } );
     }
@@ -112,11 +142,12 @@ struct Population {
             } );
         std::sort ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
                     []( Individual const & a, Individual const & b ) noexcept { return a.fitness > b.fitness; } );
-        // save_to_file_bin ( *this, "z://tmp", "population" );
+        if ( Config::instance ( ).save_population )
+            save_to_file_bin ( *this, "z://tmp", "population" );
     }
 
     void mutate ( TheBrain * const c_ ) noexcept {
-        static uniformly_decreasing_discrete_distribution<10> dis;
+        static uniformly_decreasing_discrete_distribution<5> dis;
         int rep = dis ( Rng::gen ( ) );
         do {
             int const mup = std::uniform_int_distribution<int> ( 0, TheBrain::NumWeights - 1 ) ( Rng::gen ( ) ); // mutation point.
@@ -181,9 +212,10 @@ struct Population {
     void run ( ) noexcept {
         bool once = true;
         while ( true ) {
+            load_from_file_json ( "config", Config::instance ( ), "z://tmp", "config" );
             evaluate ( );
             ++m_generation;
-            if ( m_generation > 200 ) {
+            if ( Config::instance ( ).display_match ) {
                 if ( once ) {
                     cls ( );
                     once = false;
