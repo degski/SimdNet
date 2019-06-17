@@ -221,8 +221,8 @@ struct SnakeSpace {
     // Return the fitness of the network.
     [[nodiscard]] float run ( TheBrain * const brain_ ) noexcept {
         static thread_local WorkArea work_area;
-        constexpr int s = 5;
-        std::array<int, static_cast<std::size_t> ( s )> r;
+        constexpr int s = 3;
+        int r = 0;
         for ( int i = 0; i < s; ++i ) {
             init_run ( );
             while ( move ( ) ) {                     // As long as not dead.
@@ -230,10 +230,9 @@ struct SnakeSpace {
                 change_direction (
                     decide_direction ( brain_->feed_forward ( work_area.data ( ) ) ) ); // Run the data and decide where to go,
             }                                                                           // and change direction.
-            r[ i ] = m_snake_body.size ( );
+            r += m_snake_body.size ( );
         }
-        std::sort ( std::begin ( r ), std::end ( r ) );
-        return ( r[ 1 ] + r[ 2 ] + r[ 3 ] ) / 3.0f;
+        return static_cast<float> ( r ) / static_cast<float> ( s );
     }
 
     void run_display ( TheBrain * const brain_ ) noexcept {
