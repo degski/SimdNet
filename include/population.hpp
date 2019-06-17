@@ -87,7 +87,7 @@ struct Config final {
 template<int PopSize, int FieldSize, int NumInput, int NumNeurons, int NumOutput>
 struct Population {
 
-    static constexpr int BreedSize = PopSize / 4;
+    static constexpr int BreedSize = PopSize / 3;
 
     using TheBrain   = FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>;
     using SnakeSpace = SnakeSpace<FieldSize, NumInput, NumNeurons, NumOutput>;
@@ -155,12 +155,19 @@ struct Population {
             save ( );
     }
 
+    [[nodiscard]] static std::piecewise_linear_distribution<float> piecewise_linear_distribution ( ) noexcept {
+        constexpr std::array<float, 3> i{ -2.0f, +0.0f, +2.0f }, w{ +0.0f, +1.0f, +0.0f };
+        return std::piecewise_linear_distribution<float> ( i.begin ( ), i.end ( ), w.begin ( ) );
+    }
+
     void mutate ( TheBrain * const c_ ) noexcept {
-        static uniformly_decreasing_discrete_distribution<5> dis;
-        int rep = dis ( Rng::gen ( ) );
+        static uniformly_decreasing_discrete_distribution<5> dddis;
+        // static std::piecewise_linear_distribution<float> pldis = piecewise_linear_distribution ( );
+        int rep = dddis ( Rng::gen ( ) );
         do {
             int const mup = std::uniform_int_distribution<int> ( 0, TheBrain::NumWeights - 1 ) ( Rng::gen ( ) ); // mutation point.
-            ( *c_ )[ mup ] += std::normal_distribution<float> ( 0.0f, 0.25f ) ( Rng::gen ( ) );
+            ( *c_ )[ mup ] += std::normal_distribution<float> ( 0.0f, 0.5f ) ( Rng::gen ( ) );
+            // ( *c_ )[ mup ] += pldis ( Rng::gen ( ) );
         } while ( rep-- );
     }
 

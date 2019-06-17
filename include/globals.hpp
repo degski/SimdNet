@@ -30,14 +30,13 @@
 
 namespace fs = std::filesystem;
 
-#include <cereal/cereal.hpp>
 #include <cereal/archives/binary.hpp>
-#include <cereal/archives/xml.hpp>
 #include <cereal/archives/json.hpp>
+#include <cereal/archives/xml.hpp>
+#include <cereal/cereal.hpp>
 
 extern fs::path const & g_app_data_path;
 extern fs::path const & g_app_path;
-
 
 bool is_read ( char const file_[] ) noexcept {
     return ( fs::status ( file_ ).permissions ( ) & fs::perms::owner_read ) != fs::perms::none;
@@ -92,7 +91,8 @@ void load_from_file_xml ( std::string && object_name_, T & t_, fs::path && path_
 }
 
 template<typename T>
-void save_to_file_json ( std::string && object_name_, T const & t_, fs::path && path_, std::string && file_name_, bool const append_ = false ) noexcept {
+void save_to_file_json ( std::string && object_name_, T const & t_, fs::path && path_, std::string && file_name_,
+                         bool const append_ = false ) noexcept {
     std::ofstream ostream ( path_ / ( file_name_ + std::string ( ".json" ) ),
                             append_ ? std::ios::app | std::ios::out : std::ios::out );
     {
@@ -114,10 +114,8 @@ void load_from_file_json ( std::string && object_name_, T & t_, fs::path && path
 }
 
 template<typename T>
-void save_to_file_json ( char const object_name_[], T const & t_, char const file_[],
-                         bool const append_ = false ) noexcept {
-    std::ofstream ostream ( file_,
-                            append_ ? std::ios::app | std::ios::out : std::ios::out );
+void save_to_file_json ( char const object_name_[], T const & t_, char const file_[], bool const append_ = false ) noexcept {
+    std::ofstream ostream ( file_, append_ ? std::ios::app | std::ios::out : std::ios::out );
     {
         cereal::JSONOutputArchive archive ( ostream );
         archive ( cereal::make_nvp ( object_name_, t_ ) );
