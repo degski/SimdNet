@@ -237,12 +237,12 @@ struct Population {
     }
 
     void run ( ) noexcept {
-        static auto const config = Config::instance ( );
+        static auto const & config = Config::instance ( );
         while ( true ) {
-            config.load ( );
             evaluate ( );
             reproduce ( );
             ++m_generation;
+            Config::load ( );
             if ( config.save_population ) {
                 save ( );
             }
