@@ -236,21 +236,23 @@ struct Population {
                    << L" " << aa << ")" << nl;
     }
 
+    void display ( ) const noexcept {
+        cls ( );
+        SnakeSpace snake_space;
+        snake_space.run_display ( m_population[ 0 ].id );
+    }
+
     void run ( ) noexcept {
-        static auto const & config = Config::instance ( );
+        static ConfigParams const & config = Config::instance ( );
         while ( true ) {
             evaluate ( );
             reproduce ( );
             ++m_generation;
             Config::load ( );
-            if ( config.save_population ) {
+            if ( config.save_population )
                 save ( );
-            }
-            if ( config.display_match ) {
-                cls ( );
-                SnakeSpace snake_space;
-                snake_space.run_display ( m_population[ 0 ].id );
-            }
+            if ( config.display_match )
+                display ( );
             print_statistics ( );
         }
     }
