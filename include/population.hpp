@@ -190,8 +190,6 @@ struct Population {
                             i.fitness = 0.0f;
                             i.age     = 0;
                         } );
-        if ( Config::instance ( ).save_population )
-            save ( );
     }
 
     [[nodiscard]] static int sample ( ) noexcept { return uniformly_decreasing_discrete_distribution<BreedSize>{}( Rng::gen ( ) ); }
@@ -236,7 +234,11 @@ struct Population {
         while ( true ) {
             Config::load ( );
             evaluate ( );
+            reproduce ( );
             ++m_generation;
+            if ( Config::instance ( ).save_population ) {
+                save ( );
+            }
             if ( Config::instance ( ).display_match ) {
                 if ( once ) {
                     cls ( );
@@ -249,7 +251,6 @@ struct Population {
             else {
                 print_statistics ( );
             }
-            reproduce ( );
         }
     }
 
