@@ -230,27 +230,25 @@ struct Population {
     }
 
     void run ( ) noexcept {
+        static auto const config = Config::instance ( );
         bool once = true;
         while ( true ) {
             Config::load ( );
             evaluate ( );
             reproduce ( );
             ++m_generation;
-            if ( Config::instance ( ).save_population ) {
+            if ( config.save_population ) {
                 save ( );
             }
-            if ( Config::instance ( ).display_match ) {
+            if ( config.display_match ) {
                 if ( once ) {
                     cls ( );
                     once = false;
                 }
                 SnakeSpace snake_space;
                 snake_space.run_display ( m_population[ 0 ].id );
-                print_statistics ( );
             }
-            else {
-                print_statistics ( );
-            }
+            print_statistics ( );
         }
     }
 
