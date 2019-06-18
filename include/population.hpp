@@ -54,6 +54,7 @@
 struct ConfigParams {
     bool display_match;
     bool save_population;
+    bool load_population;
 
     private:
     friend class cereal::access;
@@ -62,6 +63,7 @@ struct ConfigParams {
     void serialize ( Archive & ar_ ) {
         ar_ ( CEREAL_NVP ( display_match ) );
         ar_ ( CEREAL_NVP ( save_population ) );
+        ar_ ( CEREAL_NVP ( load_population ) );
     }
 };
 
@@ -129,10 +131,14 @@ struct Population {
 
     Population ( ) {
         Config::load ( );
-        std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ), [] ( Individual & i ) {
-            if ( nullptr == i.id )
-                i.id = new TheBrain ( );
-        } );
+        if ( Config::instance ( ).load_population )
+            load ( );
+        else
+            std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
+                            [] ( Individual & i ) {
+                                if ( nullptr == i.id )
+                                    i.id = new TheBrain ( );
+                            } );
     }
 
     ~Population ( ) noexcept {
@@ -151,23 +157,21 @@ struct Population {
             } );
         std::sort ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
                     [] ( Individual const & a, Individual const & b ) noexcept { return a.fitness > b.fitness; } );
-        if ( Config::instance ( ).save_population )
-            save ( );
     }
 
     [[nodiscard]] static std::piecewise_linear_distribution<float> piecewise_linear_distribution ( ) noexcept {
-        constexpr std::array<float, 3> i{ -2.0f, +0.0f, +2.0f }, w{ +0.0f, +1.0f, +0.0f };
+        constexpr std::array<float, 3> i{ -1.0f, +0.0f, +1.0f }, w{ +0.0f, +1.0f, +0.0f };
         return std::piecewise_linear_distribution<float> ( i.begin ( ), i.end ( ), w.begin ( ) );
     }
 
     void mutate ( TheBrain * const c_ ) noexcept {
-        static uniformly_decreasing_discrete_distribution<5> dddis;
-        // static std::piecewise_linear_distribution<float> pldis = piecewise_linear_distribution ( );
-        int rep = dddis ( Rng::gen ( ) );
+        static uniformly_decreasing_discrete_distribution<8> dddis;
+        static std::piecewise_linear_distribution<float> pldis = piecewise_linear_distribution ( );
+        int rep                                                = dddis ( Rng::gen ( ) );
         do {
             int const mup = std::uniform_int_distribution<int> ( 0, TheBrain::NumWeights - 1 ) ( Rng::gen ( ) ); // mutation point.
-            ( *c_ )[ mup ] += std::normal_distribution<float> ( 0.0f, 1.0f ) ( Rng::gen ( ) );
-            // ( *c_ )[ mup ] += pldis ( Rng::gen ( ) );
+            // ( *c_ )[ mup ] += std::normal_distribution<float> ( 0.0f, 0.5f ) ( Rng::gen ( ) );
+            ( *c_ )[ mup ] += pldis ( Rng::gen ( ) );
         } while ( rep-- );
     }
 
@@ -186,6 +190,8 @@ struct Population {
                             i.fitness = 0.0f;
                             i.age     = 0;
                         } );
+        if ( Config::instance ( ).save_population )
+            save ( );
     }
 
     [[nodiscard]] static int sample ( ) noexcept { return uniformly_decreasing_discrete_distribution<BreedSize>{}( Rng::gen ( ) ); }
