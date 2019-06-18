@@ -79,8 +79,14 @@ struct Config final {
         return params;
     }
 
-    static void load ( ) noexcept { load_from_file_json ( s_name, instance ( ), s_file ); }
-    static void save ( ) noexcept { save_to_file_json ( s_name, instance ( ), s_file ); }
+    [[maybe_unused]] static ConfigParams & load ( ) noexcept {
+        load_from_file_json ( s_name, instance ( ), s_file );
+        return instance ( );
+    }
+    [[maybe_unused]] static ConfigParams & save ( ) noexcept {
+        save_to_file_json ( s_name, instance ( ), s_file );
+        return instance ( );
+    }
 
     static constexpr char const s_file[]{ "z://tmp//config.json" };
     static constexpr char const s_name[]{ "config" };
@@ -94,6 +100,8 @@ struct Population {
     using TheBrain   = FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>;
     using SnakeSpace = SnakeSpace<FieldSize, NumInput, NumNeurons, NumOutput>;
 
+    // This is a 'dumb' object, no memory is managed, but memory is
+    // created on a load iff required.
     struct Individual {
 
         float fitness;
@@ -130,8 +138,7 @@ struct Population {
     };
 
     Population ( ) {
-        Config::load ( );
-        if ( Config::instance ( ).load_population )
+        if ( Config::load ( ).load_population )
             load ( );
         else
             std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
@@ -231,9 +238,8 @@ struct Population {
 
     void run ( ) noexcept {
         static auto const config = Config::instance ( );
-        bool once = true;
         while ( true ) {
-            Config::load ( );
+            config.load ( );
             evaluate ( );
             reproduce ( );
             ++m_generation;
@@ -241,10 +247,7 @@ struct Population {
                 save ( );
             }
             if ( config.display_match ) {
-                if ( once ) {
-                    cls ( );
-                    once = false;
-                }
+                cls ( );
                 SnakeSpace snake_space;
                 snake_space.run_display ( m_population[ 0 ].id );
             }
