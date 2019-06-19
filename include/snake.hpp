@@ -295,6 +295,17 @@ struct SnakeSpace {
         }
     }
 
+    // Change north, east south and west to left, forward, right.
+    [[nodiscard]] int orientation_to direction ( Point const d_ ) const noexcept {
+        switch ( m_direction ) {
+            case MoveDirection::no: return ( o_ + 0 ) % 4;
+            case MoveDirection::ea: return ( o_ + 1 ) % 4;
+            case MoveDirection::so: return ( o_ + 2 ) % 4;
+            case MoveDirection::we: return ( o_ + 3 ) % 4;
+        }
+        return -1; // Should not (ever) happen.
+    }
+
     [[noreturn]] void direction_to_food_4 ( pointer data_ ) const noexcept {
         Point const d = m_food - m_snake_body.front ( );
         data_[ 0 ]    = static_cast<float> ( static_cast<int> ( d.y > 0 ) * 2 - 1 ); // no
