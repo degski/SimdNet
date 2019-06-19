@@ -61,7 +61,7 @@ void printChessPiecesUnicode ( ) {
 
 int main ( ) {
 
-    Population<1'024 * 8, 39, 27, 5, 4> p;
+    Population<1'024 * 8, 39, 27, 6, 4> p;
 
     p.run ( );
 

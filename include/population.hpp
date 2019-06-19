@@ -166,9 +166,10 @@ struct Population {
                     [] ( Individual const & a, Individual const & b ) noexcept { return a.fitness > b.fitness; } );
     }
 
-    [[nodiscard]] static std::piecewise_linear_distribution<float> piecewise_linear_distribution ( ) noexcept {
-        constexpr std::array<float, 3> i{ -1.0f, +0.0f, +1.0f }, w{ +0.0f, +1.0f, +0.0f };
-        return std::piecewise_linear_distribution<float> ( i.begin ( ), i.end ( ), w.begin ( ) );
+    void crossover ( std::tuple<TheBrain const &, TheBrain const &> p_, TheBrain * const c_ ) noexcept {
+        int const cop = std::uniform_int_distribution<int> ( 0, TheBrain::NumWeights - 2 ) ( Rng::gen ( ) ); // crossover point.
+        std::copy ( std::begin ( std::get<0> ( p_ ) ), std::begin ( std::get<0> ( p_ ) ) + cop, std::begin ( *c_ ) );
+        std::copy ( std::begin ( std::get<1> ( p_ ) ) + cop, std::end ( std::get<1> ( p_ ) ), std::begin ( *c_ ) + cop );
     }
 
     void mutate ( TheBrain * const c_ ) noexcept {
@@ -182,12 +183,6 @@ struct Population {
         } while ( rep-- );
     }
 
-    void crossover ( std::tuple<TheBrain const &, TheBrain const &> p_, TheBrain * const c_ ) noexcept {
-        int const cop = std::uniform_int_distribution<int> ( 0, TheBrain::NumWeights - 2 ) ( Rng::gen ( ) ); // crossover point.
-        std::copy ( std::begin ( std::get<0> ( p_ ) ), std::begin ( std::get<0> ( p_ ) ) + cop, std::begin ( *c_ ) );
-        std::copy ( std::begin ( std::get<1> ( p_ ) ) + cop, std::end ( std::get<1> ( p_ ) ), std::begin ( *c_ ) + cop );
-    }
-
     void reproduce ( ) noexcept {
         std::for_each ( std::execution::par_unseq, std::begin ( m_population ) + BreedSize, std::end ( m_population ),
                         [this] ( Individual & i ) noexcept {
@@ -199,33 +194,16 @@ struct Population {
                         } );
     }
 
-    [[nodiscard]] static int sample ( ) noexcept { return uniformly_decreasing_discrete_distribution<BreedSize>{}( Rng::gen ( ) ); }
-    [[nodiscard]] static std::tuple<int, int> sample_match ( ) noexcept {
-        auto g = [] ( ) noexcept { return uniformly_decreasing_discrete_distribution<BreedSize>{}( Rng::gen ( ) ); };
-        std::tuple<int, int> r = { g ( ), g ( ) };
-        while ( std::get<0> ( r ) == std::get<1> ( r ) )
-            std::get<1> ( r ) = g ( );
-        return r;
-    }
-
     [[nodiscard]] TheBrain const & random_parent ( ) const noexcept { return *m_population[ sample ( ) ].id; }
     [[nodiscard]] std::tuple<TheBrain const &, TheBrain const &> random_couple ( ) const noexcept {
         auto [ p0, p1 ] = sample_match ( );
         return { *m_population[ p0 ].id, *m_population[ p1 ].id };
     }
 
-    [[nodiscard]] float average_fitness ( ) const noexcept {
-        return std::transform_reduce ( std::execution::par_unseq, std::begin ( m_population ),
-                                       std::begin ( m_population ) + BreedSize, 0.0f, std::plus<> ( ),
-                                       [] ( Individual const & i ) noexcept { return i.fitness; } ) /
-               static_cast<float> ( BreedSize );
-    }
-
-    [[nodiscard]] float average_age ( ) const noexcept {
-        return static_cast<float> ( std::transform_reduce ( std::execution::par_unseq, std::begin ( m_population ),
-                                                            std::begin ( m_population ) + BreedSize, 0, std::plus<> ( ),
-                                                            [] ( Individual const & i ) noexcept { return i.age; } ) ) /
-               static_cast<float> ( BreedSize );
+    void display ( ) const noexcept {
+        cls ( );
+        SnakeSpace snake_space;
+        snake_space.run_display ( m_population[ 0 ].id );
     }
 
     void print_statistics ( ) const noexcept {
@@ -234,12 +212,6 @@ struct Population {
         std::wcout << L" generation " << std::setw ( 6 ) << m_generation << L" fitness " << std::setprecision ( 2 ) << std::fixed
                    << std::setw ( 7 ) << m_population[ 0 ].fitness << L" " << m_population[ 0 ].age << " (" << std::setw ( 7 ) << af
                    << L" " << aa << ")" << nl;
-    }
-
-    void display ( ) const noexcept {
-        cls ( );
-        SnakeSpace snake_space;
-        snake_space.run_display ( m_population[ 0 ].id );
     }
 
     void run ( ) noexcept {
@@ -258,6 +230,35 @@ struct Population {
     }
 
     private:
+
+    [[nodiscard]] static std::piecewise_linear_distribution<float> piecewise_linear_distribution ( ) noexcept {
+        constexpr std::array<float, 3> i{ -1.0f, +0.0f, +1.0f }, w{ +0.0f, +1.0f, +0.0f };
+        return std::piecewise_linear_distribution<float> ( i.begin ( ), i.end ( ), w.begin ( ) );
+    }
+
+    [[nodiscard]] static int sample ( ) noexcept { return uniformly_decreasing_discrete_distribution<BreedSize>{}( Rng::gen ( ) ); }
+    [[nodiscard]] static std::tuple<int, int> sample_match ( ) noexcept {
+        auto g                 = []( ) noexcept { return uniformly_decreasing_discrete_distribution<BreedSize>{}( Rng::gen ( ) ); };
+        std::tuple<int, int> r = { g ( ), g ( ) };
+        while ( std::get<0> ( r ) == std::get<1> ( r ) )
+            std::get<1> ( r ) = g ( );
+        return r;
+    }
+
+    [[nodiscard]] float average_fitness ( ) const noexcept {
+        return std::transform_reduce ( std::execution::par_unseq, std::begin ( m_population ),
+                                       std::begin ( m_population ) + BreedSize, 0.0f, std::plus<> ( ),
+                                       []( Individual const & i ) noexcept { return i.fitness; } ) /
+               static_cast<float> ( BreedSize );
+    }
+
+    [[nodiscard]] float average_age ( ) const noexcept {
+        return static_cast<float> ( std::transform_reduce ( std::execution::par_unseq, std::begin ( m_population ),
+                                                            std::begin ( m_population ) + BreedSize, 0, std::plus<> ( ),
+                                                            []( Individual const & i ) noexcept { return i.age; } ) ) /
+               static_cast<float> ( BreedSize );
+    }
+
     friend class cereal::access;
 
     template<class Archive>
