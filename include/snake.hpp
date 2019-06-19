@@ -84,7 +84,7 @@ struct Point {
 
 template<int B>
 [[nodiscard]] Point random_point ( ) noexcept {
-    auto idx = []( ) noexcept { return static_cast<char> ( sax::uniform_int_distribution<int>{ -B, B }( Rng::gen ( ) ) ); };
+    auto idx = [] ( ) noexcept { return static_cast<char> ( sax::uniform_int_distribution<int>{ -B, B }( Rng::gen ( ) ) ); };
     return { idx ( ), idx ( ) };
 }
 
@@ -222,7 +222,7 @@ struct SnakeSpace {
     [[nodiscard]] float run ( TheBrain * const brain_ ) noexcept {
         static thread_local WorkArea work_area;
         constexpr int s = 3;
-        int r = 0;
+        int r           = 0;
         for ( int i = 0; i < s; ++i ) {
             init_run ( );
             while ( move ( ) ) {                     // As long as not dead.
@@ -295,6 +295,27 @@ struct SnakeSpace {
         }
     }
 
+    [[nodiscard]] static std::tuple<int, float> direction_point_to_point ( Point const & p0_, Point const & p1_ ) noexcept {
+        Point const s = p0_ - p1_;
+        if ( 0 == s.x )
+            return s.y < 0 ? std::tuple<int, float> ( 0, 1.0f / -s.y ) : std::tuple<int, float> ( 4, 1.0f / +s.y );
+        if ( s.x == s.y )
+            return s.y < 0 ? std::tuple<int, float> ( 1, 0.5f / -s.y ) : std::tuple<int, float> ( 5, 0.5f / +s.y );
+        if ( 0 == s.y )
+            return s.x < 0 ? std::tuple<int, float> ( 2, 1.0f / -s.x ) : std::tuple<int, float> ( 6, 1.0f / +s.x );
+        if ( s.x == -s.y )
+            return s.x < 0 ? std::tuple<int, float> ( 3, 0.5f / -s.x ) : std::tuple<int, float> ( 7, 0.5f / +s.x );
+        return std::tuple<int, float> ( 0, 0.0f ); // Default is north, but set to zero, which avoids any checking.
+    }
+
+    void direction_to_food ( pointer data_ ) const noexcept {
+        Point const d = m_food - m_snake_body.front ( );
+        data_[ 0 ]    = static_cast<float> ( static_cast<int> ( d.y > 0 ) * 2 - 1 ); // no
+        data_[ 1 ]    = static_cast<float> ( static_cast<int> ( d.x > 0 ) * 2 - 1 ); // ea
+        data_[ 2 ]    = static_cast<float> ( static_cast<int> ( d.y < 0 ) * 2 - 1 ); // so
+        data_[ 3 ]    = static_cast<float> ( static_cast<int> ( d.x < 0 ) * 2 - 1 ); // we
+    }
+
     void encode_current_direction ( pointer data_ ) const noexcept {
         switch ( m_direction ) {
             case MoveDirection::no:
@@ -336,10 +357,10 @@ struct SnakeSpace {
                 if ( p == m_food )
                     std::wprintf ( L" \u25B2 " );
                 else if ( snake_body_contains ( p ) )
-                    if ( p == m_snake_body.front ( ) )
-                        std::wprintf ( L" \u25A0 " );
-                    else
-                        std::wprintf ( L" \u25A1 " );
+                    // if ( p == m_snake_body.front ( ) )
+                    std::wprintf ( L" \u25A0 " );
+                // else
+                // std::wprintf ( L" \u25A1 " );
                 else
                     std::wprintf ( L" \u00B7 " );
             }
@@ -351,8 +372,8 @@ struct SnakeSpace {
     void print_update ( ) const noexcept {
         set_cursor_position ( ( m_changes.new_head.x + FieldRadius ) * 3 + 1, m_changes.new_head.y + FieldRadius );
         std::putwchar ( L'\u25A0' );
-        set_cursor_position ( ( m_changes.old_head.x + FieldRadius ) * 3 + 1, m_changes.old_head.y + FieldRadius );
-        std::putwchar ( L'\u25A1' );
+        // set_cursor_position ( ( m_changes.old_head.x + FieldRadius ) * 3 + 1, m_changes.old_head.y + FieldRadius );
+        // std::putwchar ( L'\u25A1' );
         if ( m_changes.has_eaten ) {
             set_cursor_position ( ( m_food.x + FieldRadius ) * 3 + 1, m_food.y + FieldRadius );
             std::putwchar ( L'\u25B2' );
