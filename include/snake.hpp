@@ -208,14 +208,11 @@ struct SnakeSpace {
         return false;
     }
 
-    [[nodiscard]] inline int decide_direction_4 ( const_pointer o_ ) const noexcept {
-        return o_[ 1 ] > o_[ 0 ] ? ( o_[ 3 ] > o_[ 2 ] ? ( o_[ 3 ] > o_[ 1 ] ? 3 : 1 ) : ( o_[ 2 ] > o_[ 1 ] ? 2 : 1 ) )
-                                 : ( o_[ 3 ] > o_[ 2 ] ? ( o_[ 3 ] > o_[ 0 ] ? 3 : 0 ) : ( o_[ 2 ] > o_[ 0 ] ? 2 : 0 ) );
-    }
-
-    void change_direction_4 ( int d_ ) noexcept {
-        if ( ( static_cast<int> ( m_direction ) + 2 ) % 4 != d_ ) // Cannot turn back on itself, new direction ignored.
-            m_direction = static_cast<MoveDirection> ( d_ );
+    [[nodiscard]] inline MoveDirection decide_direction_4 ( const_pointer o_ ) const noexcept {
+        return o_[ 1 ] > o_[ 0 ] ? ( o_[ 3 ] > o_[ 2 ] ? ( o_[ 3 ] > o_[ 1 ] ? MoveDirection::we : MoveDirection::ea )
+                                                       : ( o_[ 2 ] > o_[ 1 ] ? MoveDirection::so : MoveDirection::ea ) )
+                                 : ( o_[ 3 ] > o_[ 2 ] ? ( o_[ 3 ] > o_[ 0 ] ? MoveDirection::we : MoveDirection::no )
+                                                       : ( o_[ 2 ] > o_[ 0 ] ? MoveDirection::so : MoveDirection::no ) );
     }
 
     // left = 0, ahead = 1, right = 2
@@ -240,14 +237,14 @@ struct SnakeSpace {
     // Return the fitness of the network.
     [[nodiscard]] float run ( TheBrain * const brain_ ) noexcept {
         static thread_local WorkArea work_area;
-        constexpr int s = 1;
+        constexpr int s = 3;
         int r           = 0;
         for ( int i = 0; i < s; ++i ) {
             init_run ( );
             while ( move ( ) ) {                        // As long as not dead.
                 gather_input_10 ( work_area.data ( ) ); // Observe the environment.
                 m_direction =
-                    decide_direction_3 ( brain_->feed_forward ( work_area.data ( ) ) ); // Run the data and decide where to go,
+                    decide_direction_4 ( brain_->feed_forward ( work_area.data ( ) ) ); // Run the data and decide where to go,
             }                                                                           // and change direction.
             r += m_snake_body.size ( );
         }
@@ -261,7 +258,7 @@ struct SnakeSpace {
         print ( );
         while ( move_display ( ) ) {                // As long as not dead.
             gather_input_10 ( work_area.data ( ) ); // Observe the environment.
-            m_direction = decide_direction_3 (
+            m_direction = decide_direction_4 (
                 brain_->feed_forward ( work_area.data ( ) ) ); // Run the data and decide where to go, and change direction.
             print_update ( );
             sleep_for_milliseconds ( 25 );

@@ -178,7 +178,7 @@ struct Population {
         int rep                                                = dddis ( Rng::gen ( ) );
         do {
             int const mup = std::uniform_int_distribution<int> ( 0, TheBrain::NumWeights - 1 ) ( Rng::gen ( ) ); // mutation point.
-            ( *c_ )[ mup ] += std::normal_distribution<float> ( 0.0f, 1.0f ) ( Rng::gen ( ) );
+            ( *c_ )[ mup ] += std::normal_distribution<float> ( 0.0f, 0.5f ) ( Rng::gen ( ) );
             // ( *c_ )[ mup ] += pldis ( Rng::gen ( ) );
         } while ( rep-- );
     }
@@ -187,7 +187,7 @@ struct Population {
         std::for_each ( std::execution::par_unseq, std::begin ( m_population ) + BreedSize, std::end ( m_population ),
                         [this] ( Individual & i ) noexcept {
                             crossover ( random_couple ( ), i.id );
-                            if ( Rng::bernoulli ( 0.15 ) )
+                            if ( Rng::bernoulli ( 0.10 ) )
                                 mutate ( i.id );
                             i.fitness = 0.0f;
                             i.age     = 0;
