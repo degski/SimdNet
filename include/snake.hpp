@@ -226,7 +226,7 @@ struct SnakeSpace {
         for ( int i = 0; i < s; ++i ) {
             init_run ( );
             while ( move ( ) ) {                     // As long as not dead.
-                gather_input ( work_area.data ( ) ); // Observe the environment.
+                gather_input_10 ( work_area.data ( ) ); // Observe the environment.
                 change_direction (
                     decide_direction ( brain_->feed_forward ( work_area.data ( ) ) ) ); // Run the data and decide where to go,
             }                                                                           // and change direction.
@@ -241,7 +241,7 @@ struct SnakeSpace {
         set_cursor_position ( 0, 0 );
         print ( );
         while ( move_display ( ) ) {             // As long as not dead.
-            gather_input ( work_area.data ( ) ); // Observe the environment.
+            gather_input_10 ( work_area.data ( ) ); // Observe the environment.
             change_direction ( decide_direction (
                 brain_->feed_forward ( work_area.data ( ) ) ) ); // Run the data and decide where to go, and change direction.
             print_update ( );
@@ -295,23 +295,60 @@ struct SnakeSpace {
         }
     }
 
-    // Change north, east south and west to left, forward, right.
-    [[nodiscard]] int orientation_to direction ( Point const d_ ) const noexcept {
+    // Encodes, where the food is in relation to the direction the snake is
+    // moving in. So, 'in front', 'to the left', 'to the right' and 'behind'.
+    void gather_input_10 ( pointer data_ ) const noexcept {
+        Point const f = m_snake_body.front ( ), d = m_food - f;
         switch ( m_direction ) {
-            case MoveDirection::no: return ( o_ + 0 ) % 4;
-            case MoveDirection::ea: return ( o_ + 1 ) % 4;
-            case MoveDirection::so: return ( o_ + 2 ) % 4;
-            case MoveDirection::we: return ( o_ + 3 ) % 4;
+            case MoveDirection::no:
+                data_[ 0 ] = static_cast<float> ( valid_empty_point ( Point{ static_cast<char> ( f.x - 1 ), f.y } ) );
+                data_[ 1 ] = static_cast<float> ( valid_empty_point ( Point{ f.x, static_cast<char> ( f.y + 1 ) } ) );
+                data_[ 2 ] = static_cast<float> ( valid_empty_point ( Point{ static_cast<char> ( f.x + 1 ), f.y } ) );
+                data_[ 3 ] = static_cast<float> ( static_cast<int> ( d.y > 0 ) * 2 - 1 ); // no
+                data_[ 4 ] = static_cast<float> ( static_cast<int> ( d.x > 0 ) * 2 - 1 ); // ea
+                data_[ 5 ] = static_cast<float> ( static_cast<int> ( d.y < 0 ) * 2 - 1 ); // so
+                data_[ 6 ] = static_cast<float> ( static_cast<int> ( d.x < 0 ) * 2 - 1 ); // we
+                data_[ 7 ] = +1.0f;
+                data_[ 8 ] = +0.0f;
+                data_[ 9 ] = 1.0f / ( 1.0f + m_energy );
+                return;
+            case MoveDirection::ea:
+                data_[ 0 ] = static_cast<float> ( valid_empty_point ( Point{ f.x, static_cast<char> ( f.y + 1 ) } ) );
+                data_[ 1 ] = static_cast<float> ( valid_empty_point ( Point{ static_cast<char> ( f.x + 1 ), f.y } ) );
+                data_[ 2 ] = static_cast<float> ( valid_empty_point ( Point{ f.x, static_cast<char> ( f.y - 1 ) } ) );
+                data_[ 3 ] = static_cast<float> ( static_cast<int> ( d.x > 0 ) * 2 - 1 ); // ea
+                data_[ 4 ] = static_cast<float> ( static_cast<int> ( d.y < 0 ) * 2 - 1 ); // so
+                data_[ 5 ] = static_cast<float> ( static_cast<int> ( d.x < 0 ) * 2 - 1 ); // we
+                data_[ 6 ] = static_cast<float> ( static_cast<int> ( d.y > 0 ) * 2 - 1 ); // no
+                data_[ 7 ] = +0.0f;
+                data_[ 8 ] = +1.0f;
+                data_[ 9 ] = 1.0f / ( 1.0f + m_energy );
+                return;
+            case MoveDirection::so:
+                data_[ 0 ] = static_cast<float> ( valid_empty_point ( Point{ static_cast<char> ( f.x + 1 ), f.y } ) );
+                data_[ 1 ] = static_cast<float> ( valid_empty_point ( Point{ f.x, static_cast<char> ( f.y - 1 ) } ) );
+                data_[ 2 ] = static_cast<float> ( valid_empty_point ( Point{ static_cast<char> ( f.x - 1 ), f.y } ) );
+                data_[ 3 ] = static_cast<float> ( static_cast<int> ( d.y < 0 ) * 2 - 1 ); // so
+                data_[ 4 ] = static_cast<float> ( static_cast<int> ( d.x < 0 ) * 2 - 1 ); // we
+                data_[ 5 ] = static_cast<float> ( static_cast<int> ( d.y > 0 ) * 2 - 1 ); // no
+                data_[ 6 ] = static_cast<float> ( static_cast<int> ( d.x > 0 ) * 2 - 1 ); // ea
+                data_[ 7 ] = -1.0f;
+                data_[ 8 ] = +0.0f;
+                data_[ 9 ] = 1.0f / ( 1.0f + m_energy );
+                return;
+            case MoveDirection::we:
+                data_[ 0 ] = static_cast<float> ( valid_empty_point ( Point{ f.x, static_cast<char> ( f.y - 1 ) } ) );
+                data_[ 1 ] = static_cast<float> ( valid_empty_point ( Point{ static_cast<char> ( f.x - 1 ), f.y } ) );
+                data_[ 2 ] = static_cast<float> ( valid_empty_point ( Point{ f.x, static_cast<char> ( f.y + 1 ) } ) );
+                data_[ 3 ] = static_cast<float> ( static_cast<int> ( d.x < 0 ) * 2 - 1 ); // we
+                data_[ 4 ] = static_cast<float> ( static_cast<int> ( d.y > 0 ) * 2 - 1 ); // no
+                data_[ 5 ] = static_cast<float> ( static_cast<int> ( d.x > 0 ) * 2 - 1 ); // ea
+                data_[ 6 ] = static_cast<float> ( static_cast<int> ( d.y < 0 ) * 2 - 1 ); // so
+                data_[ 7 ] = +0.0f;
+                data_[ 8 ] = -1.0f;
+                data_[ 9 ] = 1.0f / ( 1.0f + m_energy );
+                return;
         }
-        return -1; // Should not (ever) happen.
-    }
-
-    [[noreturn]] void direction_to_food_4 ( pointer data_ ) const noexcept {
-        Point const d = m_food - m_snake_body.front ( );
-        data_[ 0 ]    = static_cast<float> ( static_cast<int> ( d.y > 0 ) * 2 - 1 ); // no
-        data_[ 1 ]    = static_cast<float> ( static_cast<int> ( d.x > 0 ) * 2 - 1 ); // ea
-        data_[ 2 ]    = static_cast<float> ( static_cast<int> ( d.y < 0 ) * 2 - 1 ); // so
-        data_[ 3 ]    = static_cast<float> ( static_cast<int> ( d.x < 0 ) * 2 - 1 ); // we
     }
 
     void encode_current_direction_2 ( pointer data_ ) const noexcept {
@@ -319,19 +356,19 @@ struct SnakeSpace {
             case MoveDirection::no:
                 data_[ 0 ] = +1.0f;
                 data_[ 1 ] = +0.0f;
-                break;
+                return;
             case MoveDirection::ea:
                 data_[ 0 ] = +0.0f;
                 data_[ 1 ] = +1.0f;
-                break;
+                return;
             case MoveDirection::so:
                 data_[ 0 ] = -1.0f;
                 data_[ 1 ] = +0.0f;
-                break;
+                return;
             case MoveDirection::we:
                 data_[ 0 ] = +0.0f;
                 data_[ 1 ] = -1.0f;
-                break;
+                return;
         }
     }
 
