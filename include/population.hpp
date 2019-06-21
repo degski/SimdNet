@@ -95,7 +95,7 @@ struct Config final {
 template<int PopSize, int FieldSize, int NumInput, int NumNeurons, int NumOutput>
 struct Population {
 
-    static constexpr int BreedSize = PopSize / 8;
+    static constexpr int BreedSize = PopSize / 3;
 
     using TheBrain   = FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>;
     using SnakeSpace = SnakeSpace<FieldSize, NumInput, NumNeurons, NumOutput>;
@@ -173,12 +173,12 @@ struct Population {
     }
 
     void mutate ( TheBrain * const c_ ) noexcept {
-        static uniformly_decreasing_discrete_distribution<16> dddis;
+        static uniformly_decreasing_discrete_distribution<4> dddis;
         // static std::piecewise_linear_distribution<float> pldis = piecewise_linear_distribution ( );
         int rep                                                = dddis ( Rng::gen ( ) );
         do {
             int const mup = std::uniform_int_distribution<int> ( 0, TheBrain::NumWeights - 1 ) ( Rng::gen ( ) ); // mutation point.
-            ( *c_ )[ mup ] += std::normal_distribution<float> ( 0.0f, 0.5f ) ( Rng::gen ( ) );
+            ( *c_ )[ mup ] += std::normal_distribution<float> ( 0.0f, 1.0f ) ( Rng::gen ( ) );
             // ( *c_ )[ mup ] += pldis ( Rng::gen ( ) );
         } while ( rep-- );
     }

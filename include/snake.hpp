@@ -208,27 +208,46 @@ struct SnakeSpace {
         return false;
     }
 
-    [[nodiscard]] inline int decide_direction ( const_pointer o_ ) const noexcept {
+    [[nodiscard]] inline int decide_direction_4 ( const_pointer o_ ) const noexcept {
         return o_[ 1 ] > o_[ 0 ] ? ( o_[ 3 ] > o_[ 2 ] ? ( o_[ 3 ] > o_[ 1 ] ? 3 : 1 ) : ( o_[ 2 ] > o_[ 1 ] ? 2 : 1 ) )
                                  : ( o_[ 3 ] > o_[ 2 ] ? ( o_[ 3 ] > o_[ 0 ] ? 3 : 0 ) : ( o_[ 2 ] > o_[ 0 ] ? 2 : 0 ) );
     }
 
-    void change_direction ( int d_ ) noexcept {
+    void change_direction_4 ( int d_ ) noexcept {
         if ( ( static_cast<int> ( m_direction ) + 2 ) % 4 != d_ ) // Cannot turn back on itself, new direction ignored.
             m_direction = static_cast<MoveDirection> ( d_ );
+    }
+
+    // left = 0, ahead = 1, right = 2
+    [[nodiscard]] inline MoveDirection decide_direction_3 ( const_pointer o_ ) const noexcept {
+        switch ( m_direction ) {
+            case MoveDirection::no:
+                return o_[ 0 ] > o_[ 1 ] ? ( o_[ 0 ] > o_[ 2 ] ? MoveDirection::ea : MoveDirection::we )
+                                         : ( o_[ 1 ] > o_[ 2 ] ? MoveDirection::no : MoveDirection::we );
+            case MoveDirection::ea:
+                return o_[ 0 ] > o_[ 1 ] ? ( o_[ 0 ] > o_[ 2 ] ? MoveDirection::no : MoveDirection::so )
+                                         : ( o_[ 1 ] > o_[ 2 ] ? MoveDirection::ea : MoveDirection::so );
+            case MoveDirection::so:
+                return o_[ 0 ] > o_[ 1 ] ? ( o_[ 0 ] > o_[ 2 ] ? MoveDirection::we : MoveDirection::ea )
+                                         : ( o_[ 1 ] > o_[ 2 ] ? MoveDirection::so : MoveDirection::ea );
+            case MoveDirection::we:
+                return o_[ 0 ] > o_[ 1 ] ? ( o_[ 0 ] > o_[ 2 ] ? MoveDirection::so : MoveDirection::no )
+                                         : ( o_[ 1 ] > o_[ 2 ] ? MoveDirection::we : MoveDirection::no );
+        }
+        return MoveDirection::no;
     }
 
     // Return the fitness of the network.
     [[nodiscard]] float run ( TheBrain * const brain_ ) noexcept {
         static thread_local WorkArea work_area;
-        constexpr int s = 3;
+        constexpr int s = 1;
         int r           = 0;
         for ( int i = 0; i < s; ++i ) {
             init_run ( );
-            while ( move ( ) ) {                     // As long as not dead.
+            while ( move ( ) ) {                        // As long as not dead.
                 gather_input_10 ( work_area.data ( ) ); // Observe the environment.
-                change_direction (
-                    decide_direction ( brain_->feed_forward ( work_area.data ( ) ) ) ); // Run the data and decide where to go,
+                m_direction =
+                    decide_direction_3 ( brain_->feed_forward ( work_area.data ( ) ) ); // Run the data and decide where to go,
             }                                                                           // and change direction.
             r += m_snake_body.size ( );
         }
@@ -240,10 +259,10 @@ struct SnakeSpace {
         init_run ( );
         set_cursor_position ( 0, 0 );
         print ( );
-        while ( move_display ( ) ) {             // As long as not dead.
+        while ( move_display ( ) ) {                // As long as not dead.
             gather_input_10 ( work_area.data ( ) ); // Observe the environment.
-            change_direction ( decide_direction (
-                brain_->feed_forward ( work_area.data ( ) ) ) ); // Run the data and decide where to go, and change direction.
+            m_direction = decide_direction_3 (
+                brain_->feed_forward ( work_area.data ( ) ) ); // Run the data and decide where to go, and change direction.
             print_update ( );
             sleep_for_milliseconds ( 25 );
         }

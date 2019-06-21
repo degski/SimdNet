@@ -104,7 +104,7 @@ struct FullyConnectedNeuralNetwork {
     [[nodiscard]] const_pointer feed_forward ( pointer const ibo_ ) const noexcept {
         const_pointer wgt = m_weights.data ( );
         for ( int i = NumIns; i < NumInsOuts; wgt += i++ )
-            ibo_[ i ] = activation_elliotsig ( cblas_sdot ( i, ibo_, 1, wgt, 1 ), 0.25f );
+            ibo_[ i ] = activation_bipolar ( cblas_sdot ( i, ibo_, 1, wgt, 1 ), 0.25f );
         return ibo_ + NumInsOuts - NumOutput;
     }
 
@@ -123,10 +123,6 @@ struct FullyConnectedNeuralNetwork {
             out_ << v << ' ';
         out_ << nl;
         return out_;
-    }
-
-    [[nodiscard]] float run ( ) const noexcept {
-        return std::uniform_real_distribution<float> ( 0.0f, 10'000.0f ) ( Rng::gen ( ) );
     }
 
     [[nodiscard]] float & operator[] ( int i_ ) noexcept { return m_weights[ i_ ]; }
