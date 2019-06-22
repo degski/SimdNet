@@ -208,13 +208,6 @@ struct SnakeSpace {
         return false;
     }
 
-    [[nodiscard]] inline MoveDirection decide_direction_4 ( const_pointer o_ ) const noexcept {
-        return o_[ 1 ] > o_[ 0 ] ? ( o_[ 3 ] > o_[ 2 ] ? ( o_[ 3 ] > o_[ 1 ] ? MoveDirection::we : MoveDirection::ea )
-                                                       : ( o_[ 2 ] > o_[ 1 ] ? MoveDirection::so : MoveDirection::ea ) )
-                                 : ( o_[ 3 ] > o_[ 2 ] ? ( o_[ 3 ] > o_[ 0 ] ? MoveDirection::we : MoveDirection::no )
-                                                       : ( o_[ 2 ] > o_[ 0 ] ? MoveDirection::so : MoveDirection::no ) );
-    }
-
     // left = 0, ahead = 1, right = 2
     [[nodiscard]] inline MoveDirection decide_direction_3 ( const_pointer o_ ) const noexcept {
         switch ( m_direction ) {
@@ -234,6 +227,22 @@ struct SnakeSpace {
         return MoveDirection::no;
     }
 
+    [[nodiscard]] inline MoveDirection decide_direction_4 ( const_pointer o_ ) const noexcept {
+        return o_[ 1 ] > o_[ 0 ] ? ( o_[ 3 ] > o_[ 2 ] ? ( o_[ 3 ] > o_[ 1 ] ? MoveDirection::we : MoveDirection::ea )
+                                                       : ( o_[ 2 ] > o_[ 1 ] ? MoveDirection::so : MoveDirection::ea ) )
+                                 : ( o_[ 3 ] > o_[ 2 ] ? ( o_[ 3 ] > o_[ 0 ] ? MoveDirection::we : MoveDirection::no )
+                                                       : ( o_[ 2 ] > o_[ 0 ] ? MoveDirection::so : MoveDirection::no ) );
+    }
+
+    [[nodiscard]] inline MoveDirection decide_direction ( const_pointer o_ ) const noexcept {
+        if constexpr ( 3 == NumOutput ) {
+            return decide_direction_3 ( o_ );
+        }
+        else {
+            return decide_direction_4 ( o_ );
+        }
+    }
+
     // Return the fitness of the network.
     [[nodiscard]] float run ( TheBrain * const brain_ ) noexcept {
         static thread_local WorkArea work_area;
@@ -244,7 +253,7 @@ struct SnakeSpace {
             while ( move ( ) ) {                        // As long as not dead.
                 gather_input_10 ( work_area.data ( ) ); // Observe the environment.
                 m_direction =
-                    decide_direction_4 ( brain_->feed_forward ( work_area.data ( ) ) ); // Run the data and decide where to go,
+                    decide_direction ( brain_->feed_forward ( work_area.data ( ) ) ); // Run the data and decide where to go,
             }                                                                           // and change direction.
             r += m_snake_body.size ( );
         }
@@ -258,7 +267,7 @@ struct SnakeSpace {
         print ( );
         while ( move_display ( ) ) {                // As long as not dead.
             gather_input_10 ( work_area.data ( ) ); // Observe the environment.
-            m_direction = decide_direction_4 (
+            m_direction = decide_direction (
                 brain_->feed_forward ( work_area.data ( ) ) ); // Run the data and decide where to go, and change direction.
             print_update ( );
             sleep_for_milliseconds ( 25 );
@@ -267,7 +276,7 @@ struct SnakeSpace {
 
     private:
     // Manhattan distance (activation) between points.
-    [[nodiscard]] static std::tuple<int, float> distance_point_to_point ( Point const & p0_, Point const & p1_ ) noexcept {
+    [[nodiscard]] static std::tuple<int, float> distance_point_to_point_8 ( Point const & p0_, Point const & p1_ ) noexcept {
         Point const s = p0_ - p1_;
         if ( 0 == s.x )
             return s.y < 0 ? std::tuple<int, float> ( 0, 1.0f / -s.y ) : std::tuple<int, float> ( 4, 1.0f / +s.y );
@@ -295,7 +304,7 @@ struct SnakeSpace {
 
     // Input (activation) for distances to food.
     void distances_to_food_8 ( pointer data_ ) const noexcept {
-        auto const [ dir, val ] = distance_point_to_point ( m_snake_body.front ( ), m_food );
+        auto const [ dir, val ] = distance_point_to_point_8 ( m_snake_body.front ( ), m_food );
         data_[ dir ]            = val;
     }
 
@@ -305,7 +314,7 @@ struct SnakeSpace {
         auto const end     = std::end ( m_snake_body );
         auto it            = std::begin ( m_snake_body ); // This assumes the length of the snake is at least 2.
         while ( ++it != end ) {
-            auto const [ dir, val ] = distance_point_to_point ( head, *it );
+            auto const [ dir, val ] = distance_point_to_point_8 ( head, *it );
             if ( val > data_[ dir ] )
                 data_[ dir ] = val;
         }
