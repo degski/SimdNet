@@ -251,7 +251,7 @@ struct SnakeSpace {
         for ( int i = 0; i < s; ++i ) {
             init_run ( );
             while ( move ( ) ) {                        // As long as not dead.
-                gather_input_15 ( work_area.data ( ) ); // Observe the environment.
+                gather_input_17 ( work_area.data ( ) ); // Observe the environment.
                 m_direction =
                     decide_direction ( brain_->feed_forward ( work_area.data ( ) ) ); // Run the data and decide where to go,
             }                                                                           // and change direction.
@@ -266,7 +266,7 @@ struct SnakeSpace {
         set_cursor_position ( 0, 0 );
         print ( );
         while ( move_display ( ) ) {                // As long as not dead.
-            gather_input_15 ( work_area.data ( ) ); // Observe the environment.
+            gather_input_17 ( work_area.data ( ) ); // Observe the environment.
             m_direction = decide_direction (
                 brain_->feed_forward ( work_area.data ( ) ) ); // Run the data and decide where to go, and change direction.
             print_update ( );
@@ -434,6 +434,10 @@ struct SnakeSpace {
         }
     }
 
+    void encode_current_direction_4 ( pointer data_ ) const noexcept {
+        data_[ static_cast<int> ( m_direction ) ] = 1.0f;
+    }
+
     void encode_energy_1 ( pointer data_ ) const noexcept { data_[ 0 ] = 1.0f / ( 1.0f + m_energy ); }
 
     public:
@@ -453,6 +457,23 @@ struct SnakeSpace {
         distances_to_body_4 ( d_ + 8 );
         encode_current_direction_2 ( d_ + 12 );
         encode_energy_1 ( d_ + 14 );
+    }
+
+    void gather_input_16 ( pointer d_ ) const noexcept { // 16
+        distances_to_wall_4 ( d_ );
+        std::memset ( d_ + 4, 0, 12 * sizeof ( float ) );
+        distances_to_food_4 ( d_ + 4 );
+        distances_to_body_4 ( d_ + 8 );
+        encode_current_direction_4 ( d_ + 12 );
+    }
+
+    void gather_input_17 ( pointer d_ ) const noexcept { // 17
+        distances_to_wall_4 ( d_ );
+        std::memset ( d_ + 4, 0, 12 * sizeof ( float ) );
+        distances_to_food_4 ( d_ + 4 );
+        distances_to_body_4 ( d_ + 8 );
+        encode_current_direction_4 ( d_ + 12 );
+        encode_energy_1 ( d_ + 16 );
     }
 
     void print ( ) const noexcept {

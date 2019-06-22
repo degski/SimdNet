@@ -284,7 +284,7 @@ struct Population {
         if ( ps != PopSize or fs != FieldSize or ni != NumInput or nn != NumNeurons or no != NumOutput ) {
             cls ( );
             std::wcout << "parameters do not fit." << nl;
-            std::exit ( 0 );
+            std::exit ( EXIT_SUCCESS );
         }
         ar_ ( m_population );
         ar_ ( m_generation );
