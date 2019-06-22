@@ -251,7 +251,7 @@ struct SnakeSpace {
         for ( int i = 0; i < s; ++i ) {
             init_run ( );
             while ( move ( ) ) {                        // As long as not dead.
-                gather_input_10 ( work_area.data ( ) ); // Observe the environment.
+                gather_input_15 ( work_area.data ( ) ); // Observe the environment.
                 m_direction =
                     decide_direction ( brain_->feed_forward ( work_area.data ( ) ) ); // Run the data and decide where to go,
             }                                                                           // and change direction.
@@ -266,7 +266,7 @@ struct SnakeSpace {
         set_cursor_position ( 0, 0 );
         print ( );
         while ( move_display ( ) ) {                // As long as not dead.
-            gather_input_10 ( work_area.data ( ) ); // Observe the environment.
+            gather_input_15 ( work_area.data ( ) ); // Observe the environment.
             m_direction = decide_direction (
                 brain_->feed_forward ( work_area.data ( ) ) ); // Run the data and decide where to go, and change direction.
             print_update ( );
@@ -289,6 +289,16 @@ struct SnakeSpace {
         return std::tuple<int, float> ( 0, 0.0f ); // Default is north, but set to zero, which avoids any checking.
     }
 
+       // Manhattan distance (activation) between points.
+    [[nodiscard]] static std::tuple<int, float> distance_point_to_point_4 ( Point const & p0_, Point const & p1_ ) noexcept {
+        Point const s = p0_ - p1_;
+        if ( 0 == s.x )
+            return s.y < 0 ? std::tuple<int, float> ( 0, 1.0f / -s.y ) : std::tuple<int, float> ( 2, 1.0f / +s.y );
+        if ( 0 == s.y )
+            return s.x < 0 ? std::tuple<int, float> ( 1, 1.0f / -s.x ) : std::tuple<int, float> ( 3, 1.0f / +s.x );
+        return std::tuple<int, float> ( 0, 0.0f ); // Default is north, but set to zero, which avoids any checking.
+    }
+
     // Input (activation) for distances to wall.
     void distances_to_wall_8 ( pointer data_ ) const noexcept {
         Point const & head = m_snake_body.front ( );
@@ -302,9 +312,24 @@ struct SnakeSpace {
         data_[ 7 ]         = 1.0f / ( 2 * std::min ( FieldRadius + head.x, FieldRadius - head.y ) + 1 );
     }
 
+    // Input (activation) for distances to wall.
+    void distances_to_wall_4 ( pointer data_ ) const noexcept {
+        Point const & head = m_snake_body.front ( );
+        data_[ 0 ]         = 1.0f / ( FieldRadius - head.y + 1 );
+        data_[ 1 ]         = 1.0f / ( FieldRadius - head.x + 1 );
+        data_[ 2 ]         = 1.0f / ( FieldRadius + head.y + 1 );
+        data_[ 3 ]         = 1.0f / ( FieldRadius + head.x + 1 );
+    }
+
     // Input (activation) for distances to food.
     void distances_to_food_8 ( pointer data_ ) const noexcept {
         auto const [ dir, val ] = distance_point_to_point_8 ( m_snake_body.front ( ), m_food );
+        data_[ dir ]            = val;
+    }
+
+    // Input (activation) for distances to food.
+    void distances_to_food_4 ( pointer data_ ) const noexcept {
+        auto const [ dir, val ] = distance_point_to_point_4 ( m_snake_body.front ( ), m_food );
         data_[ dir ]            = val;
     }
 
@@ -315,6 +340,18 @@ struct SnakeSpace {
         auto it            = std::begin ( m_snake_body ); // This assumes the length of the snake is at least 2.
         while ( ++it != end ) {
             auto const [ dir, val ] = distance_point_to_point_8 ( head, *it );
+            if ( val > data_[ dir ] )
+                data_[ dir ] = val;
+        }
+    }
+
+    // Input (activation) for distances to body.
+    void distances_to_body_4 ( pointer data_ ) const noexcept {
+        Point const & head = m_snake_body.front ( );
+        auto const end     = std::end ( m_snake_body );
+        auto it            = std::begin ( m_snake_body ); // This assumes the length of the snake is at least 2.
+        while ( ++it != end ) {
+            auto const [ dir, val ] = distance_point_to_point_4 ( head, *it );
             if ( val > data_[ dir ] )
                 data_[ dir ] = val;
         }
@@ -400,13 +437,22 @@ struct SnakeSpace {
     void encode_energy_1 ( pointer data_ ) const noexcept { data_[ 0 ] = 1.0f / ( 1.0f + m_energy ); }
 
     public:
-    void gather_input ( pointer d_ ) const noexcept {
+    void gather_input_27 ( pointer d_ ) const noexcept { // 27
         distances_to_wall_8 ( d_ );
         std::memset ( d_ + 8, 0, 16 * sizeof ( float ) );
         distances_to_food_8 ( d_ + 8 );
         distances_to_body_8 ( d_ + 16 );
         encode_current_direction_2 ( d_ + 24 );
         encode_energy_1 ( d_ + 26 );
+    }
+
+    void gather_input_15 ( pointer d_ ) const noexcept { // 15
+        distances_to_wall_4 ( d_ );
+        std::memset ( d_ + 4, 0, 8 * sizeof ( float ) );
+        distances_to_food_4 ( d_ + 4 );
+        distances_to_body_4 ( d_ + 8 );
+        encode_current_direction_2 ( d_ + 12 );
+        encode_energy_1 ( d_ + 14 );
     }
 
     void print ( ) const noexcept {

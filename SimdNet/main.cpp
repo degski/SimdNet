@@ -59,9 +59,10 @@ void printChessPiecesUnicode ( ) {
                << std::endl;
 }
 
+
 int main ( ) {
 
-    Population<1'024 * 6, 39, 10, 6, 3> p;
+    Population<1'024 * 6, 39, 15, 6, 4> p;
 
     p.run ( );
 

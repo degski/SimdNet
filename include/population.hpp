@@ -262,7 +262,30 @@ struct Population {
     friend class cereal::access;
 
     template<class Archive>
-    void serialize ( Archive & ar_ ) {
+    void save ( Archive & ar_ ) const {
+        constexpr int const ps = PopSize, fs = FieldSize, ni = NumInput, nn = NumNeurons, no = NumOutput;
+        ar_ ( ps );
+        ar_ ( fs );
+        ar_ ( ni );
+        ar_ ( nn );
+        ar_ ( no );
+        ar_ ( m_population );
+        ar_ ( m_generation );
+    }
+
+    template<class Archive>
+    void load ( Archive & ar_ ) {
+        int ps = 0, fs = 0, ni = 0, nn = 0, no = 0;
+        ar_ ( ps );
+        ar_ ( fs );
+        ar_ ( ni );
+        ar_ ( nn );
+        ar_ ( no );
+        if ( ps != PopSize or fs != FieldSize or ni != NumInput or nn != NumNeurons or no != NumOutput ) {
+            cls ( );
+            std::wcout << "parameters do not fit." << nl;
+            std::exit ( 0 );
+        }
         ar_ ( m_population );
         ar_ ( m_generation );
     }
