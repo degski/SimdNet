@@ -95,7 +95,7 @@ struct Config final {
 template<int PopSize, int FieldSize, int NumInput, int NumNeurons, int NumOutput>
 struct Population {
 
-    static constexpr int BreedSize = PopSize / 3;
+    static constexpr int BreedSize = PopSize / 2;
 
     using TheBrain   = FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>;
     using SnakeSpace = SnakeSpace<FieldSize, NumInput, NumNeurons, NumOutput>;
@@ -166,29 +166,24 @@ struct Population {
                     [] ( Individual const & a, Individual const & b ) noexcept { return a.fitness > b.fitness; } );
     }
 
-    void crossover ( std::tuple<TheBrain const &, TheBrain const &> p_, TheBrain * const c_ ) noexcept {
-        int const cop = std::uniform_int_distribution<int> ( 0, TheBrain::NumWeights - 2 ) ( Rng::gen ( ) ); // crossover point.
-        std::copy ( std::begin ( std::get<0> ( p_ ) ), std::begin ( std::get<0> ( p_ ) ) + cop, std::begin ( *c_ ) );
-        std::copy ( std::begin ( std::get<1> ( p_ ) ) + cop, std::end ( std::get<1> ( p_ ) ), std::begin ( *c_ ) + cop );
-    }
-
     void mutate ( TheBrain * const c_ ) noexcept {
         static uniformly_decreasing_discrete_distribution<4> dddis;
         // static std::piecewise_linear_distribution<float> pldis = piecewise_linear_distribution ( );
         int rep                                                = dddis ( Rng::gen ( ) );
         do {
             int const mup = std::uniform_int_distribution<int> ( 0, TheBrain::NumWeights - 1 ) ( Rng::gen ( ) ); // mutation point.
-            ( *c_ )[ mup ] += std::normal_distribution<float> ( 0.0f, 0.5f ) ( Rng::gen ( ) );
+            ( *c_ )[ mup ] += std::normal_distribution<float> ( 0.0f, 2.0f ) ( Rng::gen ( ) );
             // ( *c_ )[ mup ] += pldis ( Rng::gen ( ) );
         } while ( rep-- );
     }
 
     void reproduce ( ) noexcept {
-        std::for_each ( std::execution::par_unseq, std::begin ( m_population ) + BreedSize, std::end ( m_population ),
-                        [this] ( Individual & i ) noexcept {
-                            crossover ( random_couple ( ), i.id );
-                            if ( Rng::bernoulli ( 0.10 ) )
-                                mutate ( i.id );
+        std::for_each ( std::execution::par_unseq, std::begin ( m_population ) + BreedSize,
+                        std::end ( m_population ), [this]( Individual & i ) noexcept {
+                            TheBrain const & parent = random_parent ( );
+                            std::copy ( std::begin ( parent ), std::end ( parent ),
+                                        std::begin ( *i.id ) );
+                            mutate ( i.id );
                             i.fitness = 0.0f;
                             i.age     = 0;
                         } );
