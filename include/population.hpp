@@ -138,14 +138,18 @@ struct Population {
     };
 
     Population ( ) {
-        if ( Config::load ( ).load_population )
+        if ( Config::load ( ).load_population ) {
             load ( );
-        else
+        }
+        else { // load_population == false, load next time.
+            Config::instance ( ).load_population = true;
+            Config::save ( );
             std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
-                            [] ( Individual & i ) {
+                            []( Individual & i ) {
                                 if ( nullptr == i.id )
                                     i.id = new TheBrain ( );
                             } );
+        }
     }
 
     ~Population ( ) noexcept {
