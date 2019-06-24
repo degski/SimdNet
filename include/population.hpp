@@ -166,8 +166,12 @@ struct Population {
             std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ), [] ( Individual & i ) noexcept {
                 i.fitness += ( ( snake_space.run ( i.id ) - i.fitness ) / static_cast<float> ( ++i.age ) ); // Maintain the average.
             } );
+
         std::sort ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
                     [] ( Individual const & a, Individual const & b ) noexcept { return a.fitness > b.fitness; } );
+
+        // print_fitness ( );
+        // std::wcout << nl << nl;
     }
 
     void mutate ( TheBrain * const c_ ) noexcept {
@@ -191,6 +195,8 @@ struct Population {
                             i.fitness = 0.0f;
                             i.age     = 0;
                         } );
+        // print_fitness ( );
+        // std::wcout << nl << nl;
     }
 
     [[nodiscard]] TheBrain const & random_parent ( ) const noexcept { return *m_population[ sample ( ) ].id; }
@@ -217,7 +223,6 @@ struct Population {
         static ConfigParams const & config = Config::instance ( );
         while ( true ) {
             evaluate ( );
-            print_fitness ( );
             reproduce ( );
             ++m_generation;
             Config::load ( );
@@ -231,7 +236,7 @@ struct Population {
 
     void print_fitness ( ) const noexcept {
         for ( auto const & i : m_population )
-            std::wcout << i.fitness << L' ';
+            std::wcout << L'<' << i.fitness << L' ' << i.age << L'>';
     }
 
     private:
