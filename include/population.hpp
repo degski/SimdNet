@@ -176,7 +176,7 @@ struct Population {
         int rep                                                = dddis ( Rng::gen ( ) );
         do {
             int const mup = std::uniform_int_distribution<int> ( 0, TheBrain::NumWeights - 1 ) ( Rng::gen ( ) ); // mutation point.
-            ( *c_ )[ mup ] += std::normal_distribution<float> ( 0.0f, 2.0f ) ( Rng::gen ( ) );
+            ( *c_ )[ mup ] += std::normal_distribution<float> ( 0.0f, 1.0f ) ( Rng::gen ( ) );
             // ( *c_ )[ mup ] += pldis ( Rng::gen ( ) );
         } while ( rep-- );
     }
@@ -217,6 +217,7 @@ struct Population {
         static ConfigParams const & config = Config::instance ( );
         while ( true ) {
             evaluate ( );
+            print_fitness ( );
             reproduce ( );
             ++m_generation;
             Config::load ( );
@@ -226,6 +227,11 @@ struct Population {
                 display ( );
             print_statistics ( );
         }
+    }
+
+    void print_fitness ( ) const noexcept {
+        for ( auto const & i : m_population )
+            std::wcout << i.fitness << L' ';
     }
 
     private:

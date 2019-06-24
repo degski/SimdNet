@@ -246,7 +246,7 @@ struct SnakeSpace {
     // Return the fitness of the network.
     [[nodiscard]] float run ( TheBrain * const brain_ ) noexcept {
         static thread_local WorkArea work_area;
-        constexpr int s = 1;
+        constexpr int s = 3;
         int r           = 0;
         for ( int i = 0; i < s; ++i ) {
             init_run ( );
