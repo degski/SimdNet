@@ -34,7 +34,7 @@
 
 #include <sax/prng_sfc.hpp>
 
-#if defined( _DEBUG )
+#ifndef NDEBUG
 #    define RANDOM 0
 #else
 #    define RANDOM 1

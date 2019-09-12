@@ -244,17 +244,17 @@ struct SnakeSpace {
     }
 
     // Return the fitness of the network.
-    [[nodiscard]] float run ( TheBrain * const brain_ ) noexcept {
+    [[nodiscard]] float run ( TheBrain * const brain_, int const age_ ) noexcept {
         static thread_local WorkArea work_area;
-        constexpr int s = 3;
-        int r           = 0;
+        int const s = 3;
+        int r       = 0;
         for ( int i = 0; i < s; ++i ) {
             init_run ( );
             while ( move ( ) ) {                        // As long as not dead.
-                gather_input_15 ( work_area.data ( ) ); // Observe the environment.
+                gather_input_17 ( work_area.data ( ) ); // Observe the environment.
                 m_direction =
                     decide_direction ( brain_->feed_forward ( work_area.data ( ) ) ); // Run the data and decide where to go,
-            }                                                                           // and change direction.
+            }                                                                         // and change direction.
             r += m_snake_body.size ( );
         }
         return static_cast<float> ( r ) / static_cast<float> ( s );
@@ -266,7 +266,7 @@ struct SnakeSpace {
         set_cursor_position ( 0, 0 );
         print ( );
         while ( move_display ( ) ) {                // As long as not dead.
-            gather_input_15 ( work_area.data ( ) ); // Observe the environment.
+            gather_input_17 ( work_area.data ( ) ); // Observe the environment.
             m_direction = decide_direction (
                 brain_->feed_forward ( work_area.data ( ) ) ); // Run the data and decide where to go, and change direction.
             print_update ( );
@@ -289,7 +289,7 @@ struct SnakeSpace {
         return std::tuple<int, float> ( 0, 0.0f ); // Default is north, but set to zero, which avoids any checking.
     }
 
-       // Manhattan distance (activation) between points.
+    // Manhattan distance (activation) between points.
     [[nodiscard]] static std::tuple<int, float> distance_point_to_point_4 ( Point const & p0_, Point const & p1_ ) noexcept {
         Point const s = p0_ - p1_;
         if ( 0 == s.x )
@@ -434,9 +434,7 @@ struct SnakeSpace {
         }
     }
 
-    void encode_current_direction_4 ( pointer data_ ) const noexcept {
-        data_[ static_cast<int> ( m_direction ) ] = 1.0f;
-    }
+    void encode_current_direction_4 ( pointer data_ ) const noexcept { data_[ static_cast<int> ( m_direction ) ] = 1.0f; }
 
     void encode_energy_1 ( pointer data_ ) const noexcept { data_[ 0 ] = 1.0f / ( 1.0f + m_energy ); }
 

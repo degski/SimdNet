@@ -39,7 +39,7 @@
 
 namespace fs = std::filesystem;
 
-[[nodiscard]] fs::path appDataPath ( std::string && name_ ) {
+[[nodiscard]] fs::path appDataPath ( std::string && name_ ) noexcept {
     char * value;
     std::size_t len;
     _dupenv_s ( &value, &len, "USERPROFILE" );
@@ -48,17 +48,11 @@ namespace fs = std::filesystem;
     return return_value;
 }
 
-fs::path app_data_path_          = appDataPath ( "SimdNet" );
-fs::path const & g_app_data_path = app_data_path_;
-
 [[nodiscard]] fs::path getExePath ( ) noexcept {
     TCHAR exename[ 1024 ];
     GetModuleFileName ( NULL, exename, 1'024 );
     return fs::path ( exename ).parent_path ( );
 }
-
-fs::path app_path_          = getExePath ( );
-fs::path const & g_app_path = app_path_;
 
 std::string get_timestamp_utc ( ) noexcept {
     time_t rawtime = time ( NULL );
@@ -126,7 +120,7 @@ void write_buffer ( std::wostringstream const & outbuf_ ) noexcept {
     // You might be able to pass in NULL if you don't want to keep track of the
     // number of characters written. Some functions allow you to do this, others
     // don't. I'm not 100% sure about this one, the documentation doesn't say.
-    WriteConsoleOutputCharacter ( hOut, outbuf_.str ( ).c_str ( ), outbuf_.str ( ).length ( ), topLeft, &dwCharsWritten );
+    WriteConsoleOutputCharacter ( hOut, outbuf_.str ( ).c_str ( ), ( DWORD ) outbuf_.str ( ).length ( ), topLeft, &dwCharsWritten );
 }
 
 void set_mode_unicode ( ) noexcept { _setmode ( _fileno ( stdout ), _O_U16TEXT ); }

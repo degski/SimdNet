@@ -35,13 +35,16 @@ namespace fs = std::filesystem;
 #include <cereal/archives/xml.hpp>
 #include <cereal/cereal.hpp>
 
-extern fs::path const & g_app_data_path;
-extern fs::path const & g_app_path;
+[[nodiscard]] fs::path appDataPath ( std::string && name_ ) noexcept;
+[[nodiscard]] fs::path getExePath ( ) noexcept;
 
-bool is_read ( char const file_[] ) noexcept {
+inline fs::path const g_app_data_path = appDataPath ( "SimdNet" );
+inline fs::path const g_app_path      = getExePath ( );
+
+inline bool is_read ( char const file_[] ) noexcept {
     return ( fs::status ( file_ ).permissions ( ) & fs::perms::owner_read ) != fs::perms::none;
 }
-bool is_write ( char const file_[] ) noexcept {
+inline bool is_write ( char const file_[] ) noexcept {
     return ( fs::status ( file_ ).permissions ( ) & fs::perms::owner_write ) != fs::perms::none;
 }
 

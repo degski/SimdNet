@@ -95,7 +95,7 @@ struct Config final {
 template<int PopSize, int FieldSize, int NumInput, int NumNeurons, int NumOutput>
 struct Population {
 
-    static constexpr int BreedSize = PopSize / 2;
+    static constexpr int BreedSize = PopSize / 3;
 
     using TheBrain   = FullyConnectedNeuralNetwork<NumInput, NumNeurons, NumOutput>;
     using SnakeSpace = SnakeSpace<FieldSize, NumInput, NumNeurons, NumOutput>;
@@ -145,7 +145,7 @@ struct Population {
             Config::instance ( ).load_population = true;
             Config::save ( );
             std::for_each ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
-                            []( Individual & i ) {
+                            [] ( Individual & i ) {
                                 if ( nullptr == i.id )
                                     i.id = new TheBrain ( );
                             } );
@@ -164,7 +164,9 @@ struct Population {
         static thread_local SnakeSpace snake_space;
         std::for_each (
             std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ), [] ( Individual & i ) noexcept {
-                i.fitness += ( ( snake_space.run ( i.id ) - i.fitness ) / static_cast<float> ( ++i.age ) ); // Maintain the average.
+                ++i.age;
+                i.fitness +=
+                    ( ( snake_space.run ( i.id, i.age ) - i.fitness ) / static_cast<float> ( i.age ) ); // Maintain the average.
             } );
 
         std::sort ( std::execution::par_unseq, std::begin ( m_population ), std::end ( m_population ),
@@ -177,20 +179,19 @@ struct Population {
     void mutate ( TheBrain * const c_ ) noexcept {
         static uniformly_decreasing_discrete_distribution<4> dddis;
         // static std::piecewise_linear_distribution<float> pldis = piecewise_linear_distribution ( );
-        int rep                                                = dddis ( Rng::gen ( ) );
+        int rep = dddis ( Rng::gen ( ) );
         do {
             int const mup = std::uniform_int_distribution<int> ( 0, TheBrain::NumWeights - 1 ) ( Rng::gen ( ) ); // mutation point.
-            ( *c_ )[ mup ] += std::normal_distribution<float> ( 0.0f, 1.0f ) ( Rng::gen ( ) );
+            ( *c_ )[ mup ] += std::normal_distribution<float> ( 0.0f, 2.0f ) ( Rng::gen ( ) );
             // ( *c_ )[ mup ] += pldis ( Rng::gen ( ) );
         } while ( rep-- );
     }
 
     void reproduce ( ) noexcept {
-        std::for_each ( std::execution::par_unseq, std::begin ( m_population ) + BreedSize,
-                        std::end ( m_population ), [this]( Individual & i ) noexcept {
+        std::for_each ( std::execution::par_unseq, std::begin ( m_population ) + BreedSize, std::end ( m_population ),
+                        [this] ( Individual & i ) noexcept {
                             TheBrain const & parent = random_parent ( );
-                            std::copy ( std::begin ( parent ), std::end ( parent ),
-                                        std::begin ( *i.id ) );
+                            std::copy ( std::begin ( parent ), std::end ( parent ), std::begin ( *i.id ) );
                             mutate ( i.id );
                             i.fitness = 0.0f;
                             i.age     = 0;
@@ -240,7 +241,6 @@ struct Population {
     }
 
     private:
-
     [[nodiscard]] static std::piecewise_linear_distribution<float> piecewise_linear_distribution ( ) noexcept {
         constexpr std::array<float, 3> i{ -1.0f, +0.0f, +1.0f }, w{ +0.0f, +1.0f, +0.0f };
         return std::piecewise_linear_distribution<float> ( i.begin ( ), i.end ( ), w.begin ( ) );
@@ -248,7 +248,7 @@ struct Population {
 
     [[nodiscard]] static int sample ( ) noexcept { return uniformly_decreasing_discrete_distribution<BreedSize>{}( Rng::gen ( ) ); }
     [[nodiscard]] static std::tuple<int, int> sample_match ( ) noexcept {
-        auto g                 = []( ) noexcept { return uniformly_decreasing_discrete_distribution<BreedSize>{}( Rng::gen ( ) ); };
+        auto g = [] ( ) noexcept { return uniformly_decreasing_discrete_distribution<BreedSize>{}( Rng::gen ( ) ); };
         std::tuple<int, int> r = { g ( ), g ( ) };
         while ( std::get<0> ( r ) == std::get<1> ( r ) )
             std::get<1> ( r ) = g ( );
@@ -258,14 +258,14 @@ struct Population {
     [[nodiscard]] float average_fitness ( ) const noexcept {
         return std::transform_reduce ( std::execution::par_unseq, std::begin ( m_population ),
                                        std::begin ( m_population ) + BreedSize, 0.0f, std::plus<> ( ),
-                                       []( Individual const & i ) noexcept { return i.fitness; } ) /
+                                       [] ( Individual const & i ) noexcept { return i.fitness; } ) /
                static_cast<float> ( BreedSize );
     }
 
     [[nodiscard]] float average_age ( ) const noexcept {
         return static_cast<float> ( std::transform_reduce ( std::execution::par_unseq, std::begin ( m_population ),
                                                             std::begin ( m_population ) + BreedSize, 0, std::plus<> ( ),
-                                                            []( Individual const & i ) noexcept { return i.age; } ) ) /
+                                                            [] ( Individual const & i ) noexcept { return i.age; } ) ) /
                static_cast<float> ( BreedSize );
     }
 
@@ -294,6 +294,7 @@ struct Population {
         if ( ps != PopSize or fs != FieldSize or ni != NumInput or nn != NumNeurons or no != NumOutput ) {
             cls ( );
             std::wcout << "parameters do not fit." << nl;
+            std::wcout << ps << ' ' << fs << ' ' << ni << ' ' << nn << ' ' << no << nl;
             std::exit ( EXIT_SUCCESS );
         }
         ar_ ( m_population );
