@@ -178,12 +178,12 @@ struct Population {
 
     void mutate ( TheBrain * const c_ ) noexcept {
         static uniformly_decreasing_discrete_distribution<4> dddis;
-        // static std::piecewise_linear_distribution<float> pldis = piecewise_linear_distribution ( );
+        // static std::piecewise_linear_distribution<float> tridis = triangular_distribution ( );
         int rep = dddis ( Rng::gen ( ) );
         do {
             int const mup = std::uniform_int_distribution<int> ( 0, TheBrain::NumWeights - 1 ) ( Rng::gen ( ) ); // mutation point.
             ( *c_ )[ mup ] += std::normal_distribution<float> ( 0.0f, 2.0f ) ( Rng::gen ( ) );
-            // ( *c_ )[ mup ] += pldis ( Rng::gen ( ) );
+            // ( *c_ )[ mup ] += tridis ( Rng::gen ( ) );
         } while ( rep-- );
     }
 
@@ -241,13 +241,13 @@ struct Population {
     }
 
     private:
-    [[nodiscard]] static std::piecewise_linear_distribution<float> init_pwld ( ) noexcept {
+    [[nodiscard]] static std::piecewise_linear_distribution<float> init_triangular_distribution ( ) noexcept {
         constexpr std::array<float, 3> i{ -1.0f, +0.0f, +1.0f }, w{ +0.0f, +1.0f, +0.0f };
         return std::piecewise_linear_distribution<float> ( i.begin ( ), i.end ( ), w.begin ( ) );
     }
 
-    [[nodiscard]] static std::piecewise_linear_distribution<float> const & piecewise_linear_distribution ( ) noexcept {
-        static std::piecewise_linear_distribution<float> const dis = init_pwld ( );
+    [[nodiscard]] static std::piecewise_linear_distribution<float> const & triangular_distribution ( ) noexcept {
+        static std::piecewise_linear_distribution<float> const dis = init_triangular_distribution ( );
         return dis;
     }
 
