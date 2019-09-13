@@ -216,8 +216,8 @@ struct Population {
         float const af = average_fitness ( );
         float const aa = average_age ( );
         std::wcout << L" generation " << std::setw ( 6 ) << m_generation << L" fitness " << std::setprecision ( 2 ) << std::fixed
-                   << std::setw ( 7 ) << m_population[ 0 ].fitness << L" " << m_population[ 0 ].age << L" (" << std::setw ( 7 ) << af
-                   << L" " << aa << L")" << nl;
+                   << std::setw ( 7 ) << m_population[ 0 ].fitness << L" " << m_population[ 0 ].age << L" (" << std::setw ( 7 )
+                   << af << L" " << aa << L")" << nl;
     }
 
     void run ( ) noexcept {
@@ -241,9 +241,14 @@ struct Population {
     }
 
     private:
-    [[nodiscard]] static std::piecewise_linear_distribution<float> piecewise_linear_distribution ( ) noexcept {
+    [[nodiscard]] static std::piecewise_linear_distribution<float> init_pwld ( ) noexcept {
         constexpr std::array<float, 3> i{ -1.0f, +0.0f, +1.0f }, w{ +0.0f, +1.0f, +0.0f };
         return std::piecewise_linear_distribution<float> ( i.begin ( ), i.end ( ), w.begin ( ) );
+    }
+
+    [[nodiscard]] static std::piecewise_linear_distribution<float> const & piecewise_linear_distribution ( ) noexcept {
+        static std::piecewise_linear_distribution<float> const dis = init_pwld ( );
+        return dis;
     }
 
     [[nodiscard]] static int sample ( ) noexcept { return uniformly_decreasing_discrete_distribution<BreedSize>{}( Rng::gen ( ) ); }
@@ -293,7 +298,8 @@ struct Population {
         ar_ ( no );
         if ( ps != PopSize or fs != FieldSize or ni != NumInput or nn != NumNeurons or no != NumOutput ) {
             cls ( );
-            std::wcout << L"parameters do not fit. <" << ps << L", " << fs << L", " << ni << L", " << nn << L", " << no << '>' << nl;
+            std::wcout << L"parameters do not fit. <" << ps << L", " << fs << L", " << ni << L", " << nn << L", " << no << '>'
+                       << nl;
             std::wcout << L"population size " << ps << nl;
             std::wcout << L"field size " << fs << nl;
             std::wcout << L"input size " << ni << nl;
