@@ -216,8 +216,8 @@ struct Population {
         float const af = average_fitness ( );
         float const aa = average_age ( );
         std::wcout << L" generation " << std::setw ( 6 ) << m_generation << L" fitness " << std::setprecision ( 2 ) << std::fixed
-                   << std::setw ( 7 ) << m_population[ 0 ].fitness << L" " << m_population[ 0 ].age << " (" << std::setw ( 7 ) << af
-                   << L" " << aa << ")" << nl;
+                   << std::setw ( 7 ) << m_population[ 0 ].fitness << L" " << m_population[ 0 ].age << L" (" << std::setw ( 7 ) << af
+                   << L" " << aa << L")" << nl;
     }
 
     void run ( ) noexcept {
@@ -293,8 +293,12 @@ struct Population {
         ar_ ( no );
         if ( ps != PopSize or fs != FieldSize or ni != NumInput or nn != NumNeurons or no != NumOutput ) {
             cls ( );
-            std::wcout << "parameters do not fit." << nl;
-            std::wcout << ps << ' ' << fs << ' ' << ni << ' ' << nn << ' ' << no << nl;
+            std::wcout << L"parameters do not fit. <" << ps << L", " << fs << L", " << ni << L", " << nn << L", " << no << '>' << nl;
+            std::wcout << L"population size " << ps << nl;
+            std::wcout << L"field size " << fs << nl;
+            std::wcout << L"input size " << ni << nl;
+            std::wcout << L"neurons " << nn << nl;
+            std::wcout << L"output size " << no << nl;
             std::exit ( EXIT_SUCCESS );
         }
         ar_ ( m_population );
