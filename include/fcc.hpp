@@ -1,7 +1,10 @@
 
+// this file was lifted from this folder on 01.06.2020 and will be further
+// developed elsewhere.
+
 // MIT License
 //
-// Copyright (c) 2019 degski
+// Copyright (c) 2019, 2020 degski
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,9 +39,9 @@
 #include <random>
 #include <sax/iostream.hpp>
 
+#include <cereal/archives/binary.hpp>
 #include <cereal/cereal.hpp>
 #include <cereal/types/array.hpp>
-#include <cereal/archives/binary.hpp>
 
 #include "rng.hpp"
 
@@ -139,7 +142,6 @@ struct FullyConnectedNeuralNetwork {
     [[nodiscard]] const_iterator cend ( ) const noexcept { return const_iterator ( m_weights.cend ( ) ); }
 
     private:
-
     friend class cereal::access;
 
     template<class Archive>

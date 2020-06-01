@@ -67,7 +67,7 @@ struct param_type {
 
     static_assert ( Size > 1, "size should be larger than 1" );
 
-    template<int Size, typename T>
+    template<int, typename>
     friend struct uniformly_decreasing_discrete_distribution;
 
     using result_type = T;
