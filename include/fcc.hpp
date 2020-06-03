@@ -1,6 +1,6 @@
 
 // this file was lifted from this folder on 01.06.2020 and will be further
-// developed elsewhere.
+// developed in the td_learning repo.
 
 // MIT License
 //
