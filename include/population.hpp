@@ -49,7 +49,7 @@
 #include "snake.hpp"
 #include "uniformly_decreasing_discrete_distribution_vose.hpp"
 
-#include <plf/plf_nanotimer.h>
+#include <plf_nanotimer.h>
 
 struct ConfigParams {
     bool display_match;
